@@ -51,8 +51,8 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white pb-6 pt-6 md:pb-8 md:pt-8 px-4 overflow-visible">
-        <div className="max-w-7xl mx-auto text-center py-1">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 overflow-visible flex flex-col items-center justify-center pt-6 pb-14 md:pt-8 md:pb-14">
+        <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 md:mb-2">
             체험단 스캐너
           </h1>
