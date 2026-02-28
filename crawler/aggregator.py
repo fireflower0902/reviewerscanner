@@ -867,8 +867,10 @@ async def crawl_revu(context):
     login_ok = False
     try:
         print("[Revu] Logging in...")
+        # domcontentloaded 후 JS가 폼을 렌더링할 때까지 명시적 대기
         await page.goto("https://www.revu.net/login", wait_until="domcontentloaded", timeout=60000)
-        await page.wait_for_timeout(2000)
+        # 로그인 폼(이메일 입력란)이 나타날 때까지 최대 20초 대기
+        await page.wait_for_selector('input[name="email"]', timeout=20000)
         await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
         await page.fill('input[name="password"]', 'Dkssuddy1!')
         submit_btn = await page.query_selector('button[type="submit"]')
