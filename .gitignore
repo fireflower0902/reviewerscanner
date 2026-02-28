@@ -46,6 +46,7 @@ __pycache__/
 *.html
 *_dump.json
 *.png
+!app/opengraph-image.png
 debug_*.json
 public/campaigns.json
 revu_test_results.json
