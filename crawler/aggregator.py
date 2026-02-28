@@ -1287,6 +1287,14 @@ async def run_aggregator():
             json.dump(all_campaigns, f, indent=2, ensure_ascii=False)
             
         print(f"[System] Data conversion complete -> {output_path}")
+
+        # Upload to Firebase Firestore (Chunking Architecture)
+        try:
+            from firebase_chunk_client import upload_to_firestore_chunks
+            upload_to_firestore_chunks(all_campaigns)
+        except Exception as e:
+            print(f"[Firebase Chunking] Failed to upload to Firestore: {e}")
+
         await browser.close()
 
 if __name__ == "__main__":

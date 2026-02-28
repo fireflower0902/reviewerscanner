@@ -1,0 +1,42 @@
+name: Daily Campaign Crawler
+
+on:
+  schedule:
+    # 매 시간의 0분에 실행 (1시간 간격 크롤링)
+    - cron: '0 * * * *'
+  # GitHub Actions 탭에서 수동으로도 실행할 수 있도록 버튼 생성
+  workflow_dispatch: 
+
+jobs:
+  run-crawler:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. GitHub에서 내 코드 복사해오기
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 파이썬 환경 세팅
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' 
+
+      # 3. 파이썬 라이브러리 및 브라우저 컨트롤러 설치
+      - name: Install dependencies
+        run: |
+          cd crawler
+          pip install -r requirements.txt
+          playwright install chromium
+
+      # 4. 🚨 중요: 보안키 만들기 (GitHub 암호화 기능 사용)
+      - name: Create Service Account Key from Secret
+        run: |
+          cd crawler
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" > serviceAccountKey.json
+
+      # 5. 크롤러 실행 (Firebase로 바로 Chunk 업로드됨)
+      - name: Run crawler aggregator
+        run: |
+          cd crawler
+          python aggregator.py
