@@ -960,6 +960,31 @@ async def crawl_revu(context):
                                 campaign_id = item.get("id")
                                 link = f"https://www.revu.net/campaign/{campaign_id}" if campaign_id else "https://www.revu.net/"
                                 
+                                # D-day 계산: byDeadline 필드 우선, 없으면 requestEndedOn으로 직접 계산
+                                by_deadline = item.get("byDeadline")
+                                request_ended_on = item.get("requestEndedOn", "")
+                                if by_deadline is not None:
+                                    dday = f"D-{by_deadline}"
+                                    if request_ended_on:
+                                        try:
+                                            end_md = request_ended_on[5:].replace("-", "/")  # "2026-03-05" → "03/05"
+                                            dday = f"D-{by_deadline} ({end_md})"
+                                        except Exception:
+                                            pass
+                                elif request_ended_on:
+                                    try:
+                                        from datetime import datetime, timezone, timedelta
+                                        KST = timezone(timedelta(hours=9))
+                                        today = datetime.now(KST).date()
+                                        end_date = datetime.strptime(request_ended_on, "%Y-%m-%d").date()
+                                        diff = (end_date - today).days
+                                        end_md = request_ended_on[5:].replace("-", "/")
+                                        dday = f"D-{diff} ({end_md})" if diff >= 0 else "마감"
+                                    except Exception:
+                                        dday = ""
+                                else:
+                                    dday = ""
+
                                 res = {
                                     "platform": "레뷰",
                                     "title": str(title),
@@ -967,7 +992,7 @@ async def crawl_revu(context):
                                     "region": region_data,
                                     "category": "추론중", 
                                     "reward": {"text": str(offer)[:100], "value": reward_value},
-                                    "meta": {"type": type_, "dday": ""},
+                                    "meta": {"type": type_, "dday": dday},
                                     "image_url": str(thumb),
                                     "stats": {"applicants": int(applicants), "quota": int(quota)}
                                 }
