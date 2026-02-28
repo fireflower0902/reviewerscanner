@@ -864,9 +864,11 @@ async def crawl_revu(context):
     page = await context.new_page()
     
     # 1. 로그인
+    login_ok = False
     try:
         print("[Revu] Logging in...")
-        await page.goto("https://www.revu.net/login", wait_until="networkidle")
+        await page.goto("https://www.revu.net/login", wait_until="domcontentloaded", timeout=60000)
+        await page.wait_for_timeout(2000)
         await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
         await page.fill('input[name="password"]', 'Dkssuddy1!')
         submit_btn = await page.query_selector('button[type="submit"]')
@@ -874,7 +876,9 @@ async def crawl_revu(context):
              await submit_btn.click()
         else:
              await page.get_by_text("로그인", exact=True).click()
-        await page.wait_for_timeout(3000)
+        await page.wait_for_timeout(4000)
+        login_ok = True
+        print("[Revu] Login success")
     except Exception as e:
         print(f"[Revu] Login Error: {e}")
         await page.close()
