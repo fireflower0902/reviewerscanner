@@ -534,9 +534,10 @@ async def crawl_dinnerqueen(context):
         soup = BeautifulSoup(html, 'html.parser')
         items = soup.select(".qz-dq-card")
         
+        # 1단계: 목록 페이지에서 기본 정보 수집
+        raw_list = []
         for item in items:
             try:
-                # 1. URL & Title
                 link_node = item.select_one("a.qz-dq-card__link")
                 link = link_node.get('href', '') if link_node else ""
                 if link and not link.startswith('http'): link = f"https://dinnerqueen.net{link}"
@@ -544,12 +545,9 @@ async def crawl_dinnerqueen(context):
                 title = link_node.get('title', '').replace(' 신청하기', '') if link_node else ""
                 if not title: continue
                 
-                # 2. Region Logic
                 region_data = parse_region_from_title(title)
-                
                 reward_value = normalize_reward(title) 
                 
-                # 3. Stats (Applicants / Quota)
                 applicants = 0
                 quota = 0
                 text_content = item.get_text(separator=' ', strip=True)
@@ -558,35 +556,60 @@ async def crawl_dinnerqueen(context):
                     applicants = int(stats_match.group(1).replace(',', ''))
                     quota = int(stats_match.group(2).replace(',', ''))
                 
-                # 4. Meta & Channel
                 dday_node = item.select_one(".qz-caption-kr--line strong")
                 dday = dday_node.get_text(strip=True) if dday_node else ""
                 
                 type_ = map_channel("", title)
                 category = DINNERQUEEN_CATEGORY_MAP.get("taste", "음식점")
                 
-                # 5. Image
                 img_node = item.select_one(".qz-dq-card__link__img img")
                 img = img_node.get('src', '') if img_node else ""
                 
-                # 6. Reward offer text (상세 페이지 크롤링 제거 - 속도 최적화)
-                offer_text = "상세페이지 참조"
-                
-                results.append({
+                raw_list.append({
                     "platform": "디너의여왕",
                     "title": title,
                     "url": link,
                     "region": region_data,
                     "category": category,
-                    "reward": {"text": offer_text, "value": reward_value},
+                    "reward": {"text": "상세페이지 참조", "value": reward_value},
                     "meta": {"type": type_, "dday": dday},
                     "image_url": img,
                     "stats": {"applicants": applicants, "quota": quota}
                 })
             except Exception as e:
-                 print(f"[DinnerQueen] Item Parse Error: {e} -> title: {title}")
-                 continue
-            
+                continue
+        
+        print(f"[DinnerQueen] List parsed: {len(raw_list)} items. Fetching detail pages...")
+        
+        # 2단계: 상세 페이지에서 제공 내역 병렬 수집 (세마포어로 동시 5개 제한)
+        semaphore = asyncio.Semaphore(5)
+        
+        async def fetch_offer(item_data):
+            link = item_data["url"]
+            async with semaphore:
+                try:
+                    detail_page = await context.new_page()
+                    await detail_page.goto(link, wait_until="domcontentloaded", timeout=10000)
+                    detail_html = await detail_page.content()
+                    d_soup = BeautifulSoup(detail_html, 'html.parser')
+                    full_text = d_soup.get_text(separator=' ', strip=True).replace('\n', '')
+                    match = re.search(r'제공\s*내역\s*(.*?)(?:참여\s*전\s*필수|◈|★)', full_text)
+                    if match:
+                        parsed_offer = match.group(1).strip()
+                        if parsed_offer:
+                            item_data["reward"]["text"] = parsed_offer
+                except Exception:
+                    pass
+                finally:
+                    try:
+                        await detail_page.close()
+                    except Exception:
+                        pass
+            return item_data
+        
+        results = await asyncio.gather(*[fetch_offer(item) for item in raw_list])
+        results = list(results)
+        
     except Exception as e:
         print(f"[DinnerQueen] Error: {e}")
     finally:
@@ -594,6 +617,7 @@ async def crawl_dinnerqueen(context):
          
     print(f"[DinnerQueen] Collected {len(results)} items")
     return results
+
 
 # ==============================================================================
 # [Crawler 5] 서울오빠 (Seoul Oppa)
