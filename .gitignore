@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# crawler & python
+venv/
+__pycache__/
+*.html
+*_dump.json
+*.png
+debug_*.json
+public/campaigns.json
+revu_test_results.json
