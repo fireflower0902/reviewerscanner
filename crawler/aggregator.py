@@ -964,13 +964,7 @@ async def crawl_revu(context):
                                 by_deadline = item.get("byDeadline")
                                 request_ended_on = item.get("requestEndedOn", "")
                                 if by_deadline is not None:
-                                    dday = f"D-{by_deadline}"
-                                    if request_ended_on:
-                                        try:
-                                            end_md = request_ended_on[5:].replace("-", "/")  # "2026-03-05" → "03/05"
-                                            dday = f"D-{by_deadline} ({end_md})"
-                                        except Exception:
-                                            pass
+                                    dday = f"{by_deadline}일 남음"
                                 elif request_ended_on:
                                     try:
                                         from datetime import datetime, timezone, timedelta
@@ -978,8 +972,7 @@ async def crawl_revu(context):
                                         today = datetime.now(KST).date()
                                         end_date = datetime.strptime(request_ended_on, "%Y-%m-%d").date()
                                         diff = (end_date - today).days
-                                        end_md = request_ended_on[5:].replace("-", "/")
-                                        dday = f"D-{diff} ({end_md})" if diff >= 0 else "마감"
+                                        dday = f"{diff}일 남음" if diff >= 0 else "마감"
                                     except Exception:
                                         dday = ""
                                 else:
