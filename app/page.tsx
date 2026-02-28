@@ -54,7 +54,7 @@ export default async function Home() {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white pb-6 pt-6 md:pb-8 md:pt-8 px-4 overflow-visible">
         <div className="max-w-7xl mx-auto text-center py-1">
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 md:mb-2">
-            리뷰어 스캐너
+            체험단 스캐너
           </h1>
           {/* 모바일에서는 설명 문구 숨김 */}
           <p className="hidden md:block text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
