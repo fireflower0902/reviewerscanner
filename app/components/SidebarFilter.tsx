@@ -133,15 +133,15 @@ export default function SidebarFilter({
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
                             플랫폼
                         </h3>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <label className="flex items-center space-x-3 cursor-pointer group">
                                 <div className={`
-                    w-5 h-5 rounded border flex items-center justify-center transition-colors
+                    w-6 h-6 rounded border flex items-center justify-center transition-colors
                     ${filters.platforms.length === 0
                                         ? 'bg-blue-600 border-blue-600'
                                         : 'border-gray-300 group-hover:border-blue-400'}
                   `}>
-                                    {filters.platforms.length === 0 && <Check size={12} className="text-white" />}
+                                    {filters.platforms.length === 0 && <Check size={14} className="text-white" />}
                                 </div>
                                 <input
                                     type="checkbox"
@@ -149,19 +149,19 @@ export default function SidebarFilter({
                                     checked={filters.platforms.length === 0}
                                     onChange={() => onFilterChange({ ...filters, platforms: [] })}
                                 />
-                                <span className={`text-sm ${filters.platforms.length === 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                                <span className={`text-base ${filters.platforms.length === 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
                                     전체
                                 </span>
                             </label>
                             {allPlatforms.map(platform => (
                                 <label key={platform} className="flex items-center space-x-3 cursor-pointer group">
                                     <div className={`
-                    w-5 h-5 rounded border flex items-center justify-center transition-colors
+                    w-6 h-6 rounded border flex items-center justify-center transition-colors
                     ${filters.platforms.includes(platform)
                                             ? 'bg-blue-600 border-blue-600'
                                             : 'border-gray-300 group-hover:border-blue-400'}
                   `}>
-                                        {filters.platforms.includes(platform) && <Check size={12} className="text-white" />}
+                                        {filters.platforms.includes(platform) && <Check size={14} className="text-white" />}
                                     </div>
                                     <input
                                         type="checkbox"
@@ -169,7 +169,7 @@ export default function SidebarFilter({
                                         checked={filters.platforms.includes(platform)}
                                         onChange={() => togglePlatform(platform)}
                                     />
-                                    <span className={`text-sm ${filters.platforms.includes(platform) ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                                    <span className={`text-base ${filters.platforms.includes(platform) ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
                                         {platform}
                                     </span>
                                 </label>
@@ -186,7 +186,7 @@ export default function SidebarFilter({
                             <button
                                 onClick={() => onFilterChange({ ...filters, categories: [] })}
                                 className={`
-                    px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
                     ${(!filters.categories || filters.categories.length === 0)
                                         ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
                                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
@@ -199,7 +199,7 @@ export default function SidebarFilter({
                                     key={category}
                                     onClick={() => toggleCategory(category)}
                                     className={`
-                    px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
                     ${(filters.categories || []).includes(category)
                                             ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
                                             : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
@@ -220,7 +220,7 @@ export default function SidebarFilter({
                             <button
                                 onClick={() => onFilterChange({ ...filters, channels: [] })}
                                 className={`
-                    px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
                     ${(!filters.channels || filters.channels.length === 0)
                                         ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
                                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
@@ -233,7 +233,7 @@ export default function SidebarFilter({
                                     key={channel}
                                     onClick={() => toggleChannel(channel)}
                                     className={`
-                    px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
                     ${filters.channels.includes(channel)
                                             ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
                                             : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
