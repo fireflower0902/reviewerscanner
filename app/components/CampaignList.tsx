@@ -13,6 +13,7 @@ interface CampaignListProps {
 export default function CampaignList({ initialCampaigns }: CampaignListProps) {
     const [keyword, setKeyword] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     // Complex Filter State
     const [filters, setFilters] = useState({
@@ -36,6 +37,17 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
     useEffect(() => {
         setVisibleCount(ITEMS_PER_PAGE);
     }, [keyword, filters, sortBy]);
+
+    // 모바일 스크롤 감지: 조금이라도 내리면 isScrolled = true
+    useEffect(() => {
+        const container = document.getElementById('main-scroll-container');
+        if (!container) return;
+        const handleScroll = () => {
+            setIsScrolled(container.scrollTop > 10);
+        };
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Platform initialization removed; default [] means 'All'
 
@@ -160,16 +172,25 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
             />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-                {/* Mobile Header for Sidebar Toggle */}
-                <div className="lg:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-20">
-                    <h1 className="text-lg font-bold text-gray-900">리뷰어 스캐너</h1>
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-md"
-                    >
-                        <Menu size={24} />
-                    </button>
+            <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+                {/* Mobile Header for Sidebar Toggle - 스크롤 시 제목 숨김 */}
+                <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-20 transition-all duration-300">
+                    {/* 제목: 스크롤을 올리면 표시, 내리면 숨김 */}
+                    <div className={`overflow-hidden transition-all duration-300 ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-16 opacity-100'}`}>
+                        <div className="px-4 pt-4 pb-1">
+                            <h1 className="text-lg font-bold text-gray-900">리뷰어 스캐너</h1>
+                        </div>
+                    </div>
+                    {/* 필터 버튼: 항상 표시 */}
+                    <div className="flex items-center justify-end px-4 py-2">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-medium shadow-sm transition-colors"
+                        >
+                            <Menu size={16} />
+                            필터
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 sm:p-6 lg:p-8">
@@ -220,7 +241,7 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
                     {/* Grid */}
                     {visibleCampaigns.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                                 {visibleCampaigns.map((campaign, idx) => (
                                     <CampaignCard key={`${campaign.platform}-${idx}`} campaign={campaign} />
                                 ))}

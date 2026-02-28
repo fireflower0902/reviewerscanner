@@ -804,8 +804,15 @@ async def crawl_cometoplay(context):
                             
                             # 6. Image
                             img_node = item.select_one(".it_img")
-                            img = img_node.get('src', '') if img_node else ""
-                            if img and not img.startswith('http'): img = f"https://www.cometoplay.kr/{img.lstrip('/')}"
+                            img_src = img_node.get('src', '') if img_node else ""
+                            img = ""
+                            if img_src:
+                                if img_src.startswith('http'):
+                                    img = img_src
+                                else:
+                                    # ./data/... 또는 /data/... 형태를 모두 처리
+                                    import urllib.parse
+                                    img = urllib.parse.urljoin("https://www.cometoplay.kr/", img_src)
                             
                             results.append({
                                 "platform": "놀러와체험단",
