@@ -173,15 +173,8 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
 
             {/* Main Content */}
             <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-                {/* Mobile Header for Sidebar Toggle - 스크롤 시 제목 숨김 */}
-                <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-20 transition-all duration-300">
-                    {/* 제목: 스크롤을 올리면 표시, 내리면 숨김 */}
-                    <div className={`overflow-hidden transition-all duration-300 ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-16 opacity-100'}`}>
-                        <div className="px-4 pt-4 pb-1">
-                            <h1 className="text-lg font-bold text-gray-900">리뷰어 스캐너</h1>
-                        </div>
-                    </div>
-                    {/* 필터 버튼: 항상 표시 */}
+                {/* Mobile Header - 필터 버튼만 상단 고정, 제목은 Hero 배너에서 표시 */}
+                <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-20">
                     <div className="flex items-center justify-end px-4 py-2">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
