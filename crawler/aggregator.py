@@ -569,23 +569,8 @@ async def crawl_dinnerqueen(context):
                 img_node = item.select_one(".qz-dq-card__link__img img")
                 img = img_node.get('src', '') if img_node else ""
                 
-                # 6. Detail Page Crawl for Reward Offer
+                # 6. Reward offer text (상세 페이지 크롤링 제거 - 속도 최적화)
                 offer_text = "상세페이지 참조"
-                try:
-                    detail_page = await context.new_page()
-                    await detail_page.goto(link, wait_until="domcontentloaded", timeout=10000)
-                    detail_html = await detail_page.content()
-                    d_soup = BeautifulSoup(detail_html, 'html.parser')
-                    full_text = d_soup.get_text(separator=' ', strip=True).replace('\n', '')
-                    
-                    match = re.search(r'제공\s*내역\s*(.*?)(?:참여\s*전\s*필수|◈|★)', full_text)
-                    if match:
-                        parsed_offer = match.group(1).strip()
-                        if parsed_offer: offer_text = parsed_offer
-                except Exception as ex:
-                    print(f"[DinnerQueen] Detail Page Error ({link}): {ex}")
-                finally:
-                    await detail_page.close()
                 
                 results.append({
                     "platform": "디너의여왕",
