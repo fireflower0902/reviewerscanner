@@ -273,12 +273,24 @@ export default function SidebarFilter({
                                     상세 지역 (다중 선택 가능)
                                 </label>
                                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                                    {/* 전체 버튼 */}
+                                    <button
+                                        onClick={() => onFilterChange({ ...filters, cities: [] })}
+                                        className={`
+                         px-3.5 py-2 rounded-full text-sm border transition-colors
+                         ${filters.cities.length === 0
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
+                       `}
+                                    >
+                                        전체
+                                    </button>
                                     {regionHierarchy[filters.province].map(city => (
                                         <button
                                             key={city}
                                             onClick={() => toggleCity(city)}
                                             className={`
-                         px-3 py-1 rounded-full text-xs border transition-colors
+                         px-3.5 py-2 rounded-full text-sm border transition-colors
                          ${filters.cities.includes(city)
                                                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}
