@@ -51,12 +51,13 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white pb-12 pt-16 px-4">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white pb-5 pt-5 md:pb-8 md:pt-10 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 md:mb-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
             리뷰어 스캐너
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 max-w-2xl mx-auto">
+          {/* 모바일에서는 설명 문구 숨김 */}
+          <p className="hidden md:block text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
             모든 체험단을 한눈에. 지역별, 보상별 맞춤 검색.
           </p>
         </div>
