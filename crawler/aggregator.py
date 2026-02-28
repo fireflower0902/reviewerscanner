@@ -1300,7 +1300,8 @@ async def run_aggregator():
             from firebase_chunk_client import upload_to_firestore_chunks
             upload_to_firestore_chunks(all_campaigns)
         except Exception as e:
-            print(f"[Firebase Chunking] Failed to upload to Firestore: {e}")
+            print(f"[Firebase Chunking] ❌ FAILED to upload to Firestore: {e}")
+            raise  # ← GitHub Actions가 실패(❌)로 표시되도록 오류를 다시 발생시킴
 
         await browser.close()
 
