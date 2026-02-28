@@ -519,10 +519,16 @@ async def crawl_dinnerqueen(context):
         await page.goto("https://dinnerqueen.net/taste", wait_until="networkidle")
         await page.wait_for_timeout(3000)
         
-        # 스크롤하여 더 많은 데이터 로드 시도
-        for _ in range(5):
+        # 스크롤하여 더 많은 데이터 로드 시도 (무한스크롤 대응: 스크롤 후 데이터 변화 없으면 종료)
+        prev_count = 0
+        for _ in range(20):
              await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-             await page.wait_for_timeout(1000)
+             await page.wait_for_timeout(2000)
+             html_check = await page.content()
+             cur_count = html_check.count('qz-dq-card')
+             if cur_count == prev_count:
+                 break  # 더 이상 로드 없음
+             prev_count = cur_count
              
         html = await page.content()
         soup = BeautifulSoup(html, 'html.parser')
@@ -739,7 +745,7 @@ async def crawl_cometoplay(context):
             
             try:
                 # Iterate through page 1 to 20
-                for page_num in range(1, 21):
+                for page_num in range(1, 100):  # 충분히 큰 값으로 전체 페이지 수집
                     paginated_url = f"{url}&page={page_num}"
                     try:
                         await page.goto(paginated_url, wait_until="networkidle")
