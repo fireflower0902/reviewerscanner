@@ -89,11 +89,19 @@ export default function CampaignList() {
     // Platform initialization removed; default [] means 'All'
 
 
+    // 검색어를 쉼표로 나눠 공백을 정리한 단어 목록으로 만든다 ("화성시, 고기" -> ["화성시", "고기"])
+    const keywordTerms = useMemo(
+        () => keyword.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+        [keyword]
+    );
+
     const filtered = useMemo(() => {
         return campaigns.filter(c => {
-            // 1. Keyword
-            const matchesKeyword = c.title.toLowerCase().includes(keyword.toLowerCase()) ||
-                c.reward.text.toLowerCase().includes(keyword.toLowerCase());
+            // 1. Keyword — 쉼표(,)로 구분한 모든 단어를 포함해야 통과(AND). 단어마다 제목/보상/지역/카테고리 중 어디든 있으면 됨
+            const matchesKeyword = keywordTerms.length === 0 || (() => {
+                const haystack = `${c.title} ${c.reward.text} ${c.region.normalized} ${c.category}`.toLowerCase();
+                return keywordTerms.every((term) => haystack.includes(term));
+            })();
 
             // 2. Platform
             const matchesPlatform = filters.platforms.length === 0 || filters.platforms.includes(c.platform);
@@ -138,7 +146,7 @@ export default function CampaignList() {
 
             return matchesKeyword && matchesPlatform && matchesRegion && matchesCategory && matchesChannel && matchesReward && matchesOpen;
         });
-    }, [campaigns, keyword, filters]);
+    }, [campaigns, keywordTerms, filters]);
 
     // Sorting logic
     const parseDDay = (ddayStr: string): number => {
@@ -233,11 +241,14 @@ export default function CampaignList() {
                             <input
                                 type="text"
                                 className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition duration-150 ease-in-out"
-                                placeholder="캠페인 검색 (키워드, 보상 등)"
+                                placeholder="캠페인 검색 (키워드, 보상 등) · 쉼표(,)로 여러 단어 입력"
                                 value={keyword}
                                 onChange={(e) => setKeyword(e.target.value)}
                             />
                         </div>
+                        <p className="mt-2 px-1 text-xs text-gray-500">
+                            💡 쉼표(,)로 구분하면 <b>모든 단어를 포함</b>한 캠페인만 보여줘요. 예) <span className="font-medium text-gray-700">화성시, 고기</span> (제목·보상·지역·카테고리에서 찾아요)
+                        </p>
                     </div>
 
                     {/* Results Count & Active Filters Summary */}

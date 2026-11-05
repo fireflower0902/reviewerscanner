@@ -15,7 +15,7 @@ import requests
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from helpers import normalize_reward
 from region_mapper import RegionMapper
-from category_mapper import extract_category_by_keyword
+from crawlers.fourblog_category import classify
 
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 BASE_URL = "https://4blog.net"
@@ -79,7 +79,7 @@ def parse_item(it: Dict) -> Dict:
 
     return {
         "platform": "포블로그", "title": title, "url": f"{BASE_URL}/campaign/{it['CID']}/",
-        "region": region_data, "category": extract_category_by_keyword(title, offer[:80]),  # 긴 문구의 잡다한 단어가 분류를 흐리지 않게 앞부분만
+        "region": region_data, "category": classify(name, it.get("KEYWORD") or "", offer),   # 제목+해시태그+제공내역 가중 점수(fourblog_category.py)
         "reward": {"text": offer, "value": reward_value},
         "meta": {"type": _CHANNEL_MAP.get(it.get("CATEGORY"), "기타"), "dday": _dday_text(it.get("REMAINDATE"))},
         "image_url": img,
