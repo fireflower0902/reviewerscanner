@@ -5,7 +5,18 @@ on:
     # 매 시간의 0분에 실행 (1시간 간격 크롤링)
     - cron: '0 * * * *'
   # GitHub Actions 탭에서 수동으로도 실행할 수 있도록 버튼 생성
-  workflow_dispatch: 
+  workflow_dispatch:
+  # (테스트 기간 임시) static-r2 브랜치에 크롤러 코드가 푸시되면 자동 실행. main 병합 후에는 제거해도 됨
+  push:
+    branches: [static-r2]
+    paths:
+      - 'crawler/**'
+      - '.github/workflows/crawler.yml'
+
+# 동시에 두 번 돌지 않도록 순서대로 실행 (R2 파일을 동시에 덮어쓰는 것 방지)
+concurrency:
+  group: crawler
+  cancel-in-progress: false
 
 jobs:
   run-crawler:
