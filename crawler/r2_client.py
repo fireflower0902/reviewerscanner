@@ -34,7 +34,8 @@ def _client():
     )
 
 
-def upload_campaigns(campaigns: List[Dict]) -> None:
+def upload_campaigns(campaigns: List[Dict], generated_at: str = None) -> None:
+    """generated_at: 마감 표기("N일 남음")를 계산한 시점(ISO). 사이트가 날짜 기준으로 보정하는 데 쓴다."""
     payload = build_payload(campaigns)
     client = _client()
     client.put_object(
@@ -42,6 +43,7 @@ def upload_campaigns(campaigns: List[Dict]) -> None:
         Key=OBJECT_KEY,
         Body=payload,
         ContentType="application/json",
+        Metadata={"generated-at": generated_at} if generated_at else {},
     )
     print(f"[R2] Uploaded {len(campaigns)} items → {OBJECT_KEY} ({len(payload)/1024/1024:.2f} MB gzip)")
 

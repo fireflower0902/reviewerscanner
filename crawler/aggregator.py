@@ -6,6 +6,7 @@
 - 각 모듈 위치: crawler/crawlers/{사이트명}.py
 """
 import asyncio
+import datetime
 import json
 import os
 import random
@@ -32,6 +33,9 @@ _CRAWLERS = [
 
 
 async def run_aggregator():
+    # 마감 표기(N일 남음)는 수집 시점 기준이므로 시작 시각을 기록해 R2 메타데이터로 전달한다
+    generated_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
     # 동시 실행 수 (기본 9 = 전부 동시). Chromium ~700MB/개 × 9 ≈ 6GB — 공개 저장소용 GitHub 러너(16GB) 기준
     sem = asyncio.Semaphore(int(os.environ.get("CRAWLER_CONCURRENCY", "9")))
 
@@ -91,7 +95,7 @@ async def run_aggregator():
             f"수집 건수({len(all_campaigns)})가 최소 기준({MIN_ITEMS_TO_UPLOAD}) 미만이라 업로드하지 않습니다"
         )
     try:
-        r2_client.upload_campaigns(all_campaigns)
+        r2_client.upload_campaigns(all_campaigns, generated_at=generated_at)
     except Exception as e:
         print(f"[R2] ❌ FAILED: {e}")
         raise

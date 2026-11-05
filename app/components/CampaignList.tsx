@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Campaign } from '../types/campaign';
+import { kstDaysPassed, shiftDday } from '../lib/dday';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, Menu } from 'lucide-react';
@@ -19,12 +20,21 @@ export default function CampaignList() {
         const controller = new AbortController();
         setLoadState('loading');
         fetch(DATA_URL, { signal: controller.signal })
-            .then((res) => {
+            .then(async (res) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
+                return { data: (await res.json()) as Campaign[], generatedAt: res.headers.get('x-generated-at') };
             })
-            .then((data: Campaign[]) => {
-                setCampaigns(Array.isArray(data) ? data : []);
+            .then(({ data, generatedAt }) => {
+                const list = Array.isArray(data) ? data : [];
+                // 수집 이후 날짜가 바뀐 만큼 마감 표기를 보정 (헤더가 없으면 보정 없음)
+                const daysPassed = generatedAt ? kstDaysPassed(generatedAt) : 0;
+                const adjusted = daysPassed > 0
+                    ? list.flatMap((c) => {
+                        const dday = shiftDday(c.meta.dday, daysPassed);
+                        return dday === null ? [] : [{ ...c, meta: { ...c.meta, dday } }];
+                    })
+                    : list;
+                setCampaigns(adjusted);
                 setLoadState('ready');
             })
             .catch((err) => {
@@ -249,9 +259,11 @@ export default function CampaignList() {
                                 <option value="deadline">마감임박순</option>
                                 <option value="popular">인기순 (신청자 많은순)</option>
                             </select>
-                            <div className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full shrink-0">
-                                총 {filtered.length}개 중 {visibleCampaigns.length}개 표시
-                            </div>
+                            {loadState === 'ready' && (
+                                <div className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full shrink-0">
+                                    총 {filtered.length}개 중 {visibleCampaigns.length}개 표시
+                                </div>
+                            )}
                         </div>
                     </div>
 
