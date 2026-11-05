@@ -29,6 +29,26 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
+      # 3-1. 네트워크 진단: 강남맛집이 GitHub 서버에서 막히는 원인 확인용 (결과는 로그에만 출력)
+      - name: Network diagnostics
+        continue-on-error: true
+        run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          H="https://xn--939au0g4vj8sq.net"
+          W='status=%{http_code} connect=%{time_connect}s first_byte=%{time_starttransfer}s total=%{time_total}s remote_ip=%{remote_ip}\n'
+          echo "== runner public IP / country"
+          curl -sS -m 10 https://ipinfo.io/json | grep -E '"(ip|country|org)"' || true
+          echo "== 강남맛집 홈페이지 GET"
+          curl -sS -m 20 -o /dev/null -w "$W" -A "$UA" "$H/cp/?ca=20" || echo "FAILED curl_exit=$?"
+          echo "== 강남맛집 목록 API POST (헤더 포함)"
+          curl -sS -m 20 -o /dev/null -w "$W" -A "$UA" -X POST "$H/theme/go/_list_cmp_tpl.php" \
+            -H "Referer: $H/cp/?ca=20" -H "Origin: $H" -H "X-Requested-With: XMLHttpRequest" \
+            --data-urlencode "ca=2005" --data-urlencode "loca_prt=서울" --data-urlencode "local_1=전체" \
+            --data-urlencode "local_2=서울" --data-urlencode "rpage=1" --data-urlencode "row_num=20" || echo "FAILED curl_exit=$?"
+          echo "== 대조군: 같은 서버에서 정상 수집되는 국내 사이트"
+          curl -sS -m 20 -o /dev/null -w "$W" -A "$UA" https://www.reviewplace.co.kr/ || echo "FAILED curl_exit=$?"
+          curl -sS -m 20 -o /dev/null -w "$W" -A "$UA" https://www.google.com/ || echo "FAILED curl_exit=$?"
+
       # 4. 크롤러 실행 (결과는 Cloudflare R2에 업로드됨)
       - name: Run crawler aggregator
         env:

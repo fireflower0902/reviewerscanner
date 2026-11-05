@@ -25,20 +25,29 @@ async def crawl(context: BrowserContext) -> List[Dict]:
         await page.wait_for_timeout(3000)
 
         print("[4Blog] Scrolling to load campaigns...")
-        previous_height = await page.evaluate("document.body.scrollHeight")
-        for i in range(50):
+        # 높이가 아니라 '캠페인 링크 수'가 늘어나는지로 판단하고, 느린 네트워크를 고려해 여러 번 기다린다
+        item_selector = "a[href*='/campaign/']"
+        prev_count = await page.locator(item_selector).count()
+        stagnant = 0
+        for i in range(120):
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(2000)
-            new_height = await page.evaluate("document.body.scrollHeight")
-            if new_height == previous_height:
-                await page.wait_for_timeout(2000)
-                new_height = await page.evaluate("document.body.scrollHeight")
-                if new_height == previous_height:
-                    print(f"  [4Blog] Reached bottom at scroll {i+1}")
+            grew = False
+            for _ in range(6):  # 최대 약 9초 동안 증가 여부 확인
+                await page.wait_for_timeout(1500)
+                cur_count = await page.locator(item_selector).count()
+                if cur_count > prev_count:
+                    grew = True
                     break
-            previous_height = new_height
+            if grew:
+                prev_count = cur_count
+                stagnant = 0
+            else:
+                stagnant += 1
+                if stagnant >= 2:
+                    print(f"  [4Blog] Reached bottom at scroll {i+1} ({prev_count} links)")
+                    break
             if (i+1) % 10 == 0:
-                print(f"  [4Blog] Scroll {i+1} times...")
+                print(f"  [4Blog] Scroll {i+1} times... ({prev_count} links)")
 
         html = await page.content()
         soup = BeautifulSoup(html, 'html.parser')

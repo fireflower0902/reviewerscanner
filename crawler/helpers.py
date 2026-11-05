@@ -74,3 +74,17 @@ async def scroll_to_bottom(page, max_scrolls: int = 50):
         previous_height = new_height
         if (i+1) % 10 == 0:
             print(f"  [Scroll] {i+1} times...")
+
+
+def normalize_dday(text: str) -> str:
+    """마감 표기를 프론트가 읽는 형식으로 통일: 'D-5' -> '5일 남음', 'D-DAY' -> '오늘까지'"""
+    if not text:
+        return text
+    t = text.strip()
+    m = re.match(r'^D\s*-\s*(\d+)$', t, re.IGNORECASE)
+    if m:
+        n = int(m.group(1))
+        return "오늘까지" if n == 0 else f"{n}일 남음"
+    if t.upper().replace(" ", "") in ("D-DAY", "DDAY"):
+        return "오늘까지"
+    return t

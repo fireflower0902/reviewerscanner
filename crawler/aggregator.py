@@ -8,7 +8,10 @@ import asyncio
 import json
 import os
 import random
+import time
 from typing import List, Dict
+
+from helpers import normalize_dday
 
 from crawlers import kangnam, reviewplace, reviewnote, dinnerqueen
 from crawlers import seouloppa, cometoplay, revu, fourblog, ohmyblog
@@ -35,18 +38,21 @@ async def run_aggregator():
     async def run_with_sem(name: str, run_func) -> List[Dict]:
         async with sem:
             print(f"\n[System] ▶ Starting: {name}")
+            started = time.time()
             try:
                 results = await run_func()
-                print(f"[System] ✓ Done: {name} — {len(results)} items")
+                print(f"[System] ✓ Done: {name} — {len(results)} items ({time.time() - started:.0f}s)")
                 return results
             except Exception as e:
-                print(f"[System] ✗ Failed: {name} — {e}")
+                print(f"[System] ✗ Failed: {name} — {e} ({time.time() - started:.0f}s)")
                 return []
 
     tasks = [run_with_sem(name, func) for name, func in _CRAWLERS]
     results_list = await asyncio.gather(*tasks)
 
     all_campaigns: List[Dict] = [item for sublist in results_list for item in sublist]
+    for c in all_campaigns:
+        c["meta"]["dday"] = normalize_dday(c["meta"].get("dday", ""))
     random.shuffle(all_campaigns)
 
     # 플랫폼별 수집 수 출력

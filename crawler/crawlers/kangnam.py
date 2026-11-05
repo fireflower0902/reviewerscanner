@@ -13,6 +13,44 @@ from category_mapper import GANGNAM_CATEGORY_MAP
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
+class _Unreachable(Exception):
+    """사이트가 이 네트워크(예: GitHub Actions의 해외 IP)에서 연속으로 응답하지 않을 때"""
+
+
+MAX_CONSECUTIVE_ERRORS = 3
+REQUEST_TIMEOUT_MS = 20000
+
+
+_IN_PAGE_POST_JS = """async ([u, f]) => {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 20000);
+    try {
+        const r = await fetch(u, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest'},
+            body: new URLSearchParams(f).toString(),
+            signal: c.signal,
+        });
+        return [r.status, await r.text()];
+    } finally { clearTimeout(t); }
+}"""
+
+
+async def _post_form(page, url, form, state):
+    """직접 요청이 막히면(해외 IP 등) 같은 사이트 페이지 안에서 fetch하는 방식으로 한 번 전환해 본다."""
+    if not state["in_page"]:
+        try:
+            r = await page.request.post(url, form=form, timeout=REQUEST_TIMEOUT_MS)
+            return r.status, await r.text()
+        except Exception as e:
+            if state["switched"]:
+                raise
+            state["switched"] = True
+            state["in_page"] = True
+            print(f"  [Gangnam] 직접 요청 실패({str(e).splitlines()[0]}) → 브라우저 내부 fetch로 전환")
+    return await page.evaluate(_IN_PAGE_POST_JS, [url, form])
+
+
 async def crawl(context: BrowserContext) -> List[Dict]:
     """강남맛집 크롤링 (API-based Pagination)"""
     regions = [
@@ -27,12 +65,16 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     ]
 
     all_results = []
+    consecutive_errors = 0
+    post_state = {"in_page": False, "switched": False}
     api_url = "https://xn--939au0g4vj8sq.net/theme/go/_list_cmp_tpl.php"
 
     page = await context.new_page()
     try:
-        await page.goto("https://xn--939au0g4vj8sq.net/cp/?ca=20", wait_until="domcontentloaded")
-    except: pass
+        resp = await page.goto("https://xn--939au0g4vj8sq.net/cp/?ca=20", wait_until="domcontentloaded", timeout=REQUEST_TIMEOUT_MS)
+        print(f"[Gangnam] Homepage status: {resp.status if resp else 'none'}")
+    except Exception as e:
+        print(f"[Gangnam] Homepage load failed: {str(e).splitlines()[0]}")
 
     try:
         for ca_code, mapped_category in GANGNAM_CATEGORY_MAP.items():
@@ -48,11 +90,11 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                         "row_num": "20"
                     }
                     try:
-                        response = await page.request.post(api_url, form=form_data)
-                        if not response.ok:
-                            print(f"  [Gangnam] API Status {response.status} at {region['name']} p{page_num}")
+                        status, html_fragment = await _post_form(page, api_url, form_data, post_state)
+                        consecutive_errors = 0
+                        if status != 200:
+                            print(f"  [Gangnam] API Status {status} at {region['name']} p{page_num}")
                             break
-                        html_fragment = await response.text()
                         if not html_fragment or len(html_fragment) < 50:
                             break
                         soup = BeautifulSoup(html_fragment, 'html.parser')
@@ -115,8 +157,13 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                                 })
                             except Exception: continue
                     except Exception as e:
-                        print(f"  [Gangnam] Error page {page_num}: {e}")
+                        print(f"  [Gangnam] Error page {page_num}: {str(e).splitlines()[0]}")
+                        consecutive_errors += 1
+                        if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                            raise _Unreachable(f"연속 {consecutive_errors}회 요청 실패 — 이 네트워크에서 접속 불가로 판단하고 중단")
                         break
+    except _Unreachable as e:
+        print(f"[Gangnam] ⚠ {e}")
     except Exception as e:
         print(f"[Gangnam] Critical Error: {e}")
     finally:
