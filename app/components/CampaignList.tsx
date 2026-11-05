@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Campaign } from '../types/campaign';
-import { kstDaysPassed, shiftDday, readJsonMaybeGzip } from '../lib/dday';
+import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../lib/dday';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, Menu } from 'lucide-react';
@@ -25,7 +25,11 @@ export default function CampaignList() {
                 return { data: await readJsonMaybeGzip<Campaign[]>(res), generatedAt: res.headers.get('x-generated-at') };
             })
             .then(({ data, generatedAt }) => {
-                const list = Array.isArray(data) ? data : [];
+                // 마감 표기 통일("오늘까지"/"0일 남음" -> "오늘마감") — 크롤러 데이터가 갱신되기 전에도 적용
+                const list = (Array.isArray(data) ? data : []).map((c) => {
+                    const dday = normalizeDday(c.meta.dday);
+                    return dday === c.meta.dday ? c : { ...c, meta: { ...c.meta, dday } };
+                });
                 // 수집 이후 날짜가 바뀐 만큼 마감 표기를 보정 (헤더가 없으면 보정 없음)
                 const daysPassed = generatedAt ? kstDaysPassed(generatedAt) : 0;
                 const adjusted = daysPassed > 0
@@ -74,13 +78,12 @@ export default function CampaignList() {
 
     // 모바일 스크롤 감지: 조금이라도 내리면 isScrolled = true
     useEffect(() => {
-        const container = document.getElementById('main-scroll-container');
-        if (!container) return;
         const handleScroll = () => {
-            setIsScrolled(container.scrollTop > 10);
+            setIsScrolled(window.scrollY > 10);
         };
-        container.addEventListener('scroll', handleScroll, { passive: true });
-        return () => container.removeEventListener('scroll', handleScroll);
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     // Platform initialization removed; default [] means 'All'
@@ -206,7 +209,7 @@ export default function CampaignList() {
             />
 
             {/* Main Content */}
-            <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+            <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header - 필터 버튼만 상단 고정, 제목은 Hero 배너에서 표시 */}
                 <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-20">
                     <div className="flex items-center justify-end px-4 py-2">

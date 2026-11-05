@@ -117,7 +117,7 @@ export default function SidebarFilter({
 
             {/* Sidebar Container */}
             <aside className={`
-        fixed top-0 left-0 bottom-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:shadow-none lg:z-auto lg:h-auto lg:w-72 lg:block border-r border-gray-200 overflow-y-auto
+        fixed top-0 left-0 bottom-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:shadow-none lg:z-auto lg:w-72 lg:block border-r border-gray-200 overflow-y-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
                 <div className="p-5 space-y-8">

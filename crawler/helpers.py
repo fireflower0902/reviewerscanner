@@ -8,6 +8,9 @@ except ImportError:
     from region_mapper import RegionMapper
 
 
+TODAY_LABEL = "오늘마감"   # 당일 마감 표기(프론트 app/lib/dday.ts 의 TODAY_LABEL과 동일하게 유지)
+
+
 def normalize_reward(reward_text: str) -> int:
     """'3만원' -> 30000"""
     if not reward_text: return 0
@@ -81,14 +84,14 @@ def normalize_dday(text: str) -> str:
     if not text:
         return text
     t = text.strip()
-    if re.match(r'^0\s*일\s*남음$', t):   # 당일 마감: "0일 남음" -> "오늘까지" (다른 사이트와 표기 통일)
-        return "오늘까지"
+    if re.match(r'^0\s*일\s*남음$', t) or re.match(r'^오늘\s*(까지|마감)$', t):   # 당일 마감 표기 통일
+        return TODAY_LABEL
     m = re.match(r'^D\s*-\s*(\d+)$', t, re.IGNORECASE)
     if m:
         n = int(m.group(1))
-        return "오늘까지" if n == 0 else f"{n}일 남음"
+        return TODAY_LABEL if n == 0 else f"{n}일 남음"
     if t.upper().replace(" ", "") in ("D-DAY", "DDAY"):
-        return "오늘까지"
+        return TODAY_LABEL
     return t
 
 
@@ -102,7 +105,7 @@ def shift_dday(dday: str, days_passed: int):
         remain = int(m.group(1)) - days_passed
         if remain < 0:
             return None
-        return "오늘까지" if remain == 0 else f"{remain}일 남음"
+        return TODAY_LABEL if remain == 0 else f"{remain}일 남음"
     if "오늘" in dday:  # '오늘까지', '오늘마감' — 하루라도 지나면 마감
         return None
     return dday

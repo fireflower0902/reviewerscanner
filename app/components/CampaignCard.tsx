@@ -23,6 +23,8 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         sizes="(max-width: 640px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         unoptimized={campaign.image_url.includes('cometoplay')}
+                        // 일부 이미지 서버(디너의여왕 등)는 다른 사이트에서의 직접 불러오기(핫링크)를 Referer로 막는다
+                        referrerPolicy="no-referrer"
                     />
                 ) : (
                     <div className="flex h-full items-center justify-center text-gray-400 text-xs">

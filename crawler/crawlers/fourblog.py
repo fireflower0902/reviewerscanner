@@ -49,7 +49,7 @@ def _dday_text(remain) -> str:
         n = int(remain)
     except (TypeError, ValueError):
         return ""
-    return "오늘까지" if n <= 0 else f"{n}일 남음"
+    return "오늘마감" if n <= 0 else f"{n}일 남음"
 
 
 def _clean(text: str, limit: int = 150) -> str:

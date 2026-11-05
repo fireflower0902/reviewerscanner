@@ -18,6 +18,11 @@ _LIST_URL = ("https://dinnerqueen.net/taste/taste_list?ct=&area1=%EC%A0%84%EA%B5
 _MAX_PAGES = 300          # 안전 상한 (페이지당 30건, has_next로 정상 종료)
 
 
+# 카드 뱃지 → 표준 카테고리 / 제외 대상
+_BADGE_CATEGORY = {"맛집": "음식점", "여가": "레저", "뷰티": "뷰티", "배달": "배달"}
+_EXCLUDED_BADGES = {"배송", "기자단"}
+
+
 def _parse_card(item) -> Dict:
     link_node = item.select_one("a.qz-dq-card__link")
     link = link_node.get('href', '') if link_node else ""
@@ -26,6 +31,19 @@ def _parse_card(item) -> Dict:
     title = link_node.get('title', '').replace(' 신청하기', '') if link_node else ""
     if not title:
         return {}
+
+    # 카드 상단 뱃지: [채널(릴스/클립)] + 분류(맛집/여가/뷰티/배달/배송/기자단...) + (포인트).
+    # 채널 뱃지가 없으면 일반 네이버 블로그 캠페인이다.
+    badges = [b.get_text(strip=True) for b in item.select(".qz-dq-card__badge-row strong")]
+    if any(b in _EXCLUDED_BADGES for b in badges):
+        return {}   # 배송형/기자단은 방문형이 아니라 다른 사이트와 동일하게 제외
+    if "릴스" in badges:
+        channel = "인스타그램 릴스"
+    elif "클립" in badges:
+        channel = "네이버 클립"
+    else:
+        channel = "네이버 블로그" if badges else map_channel("", title)
+    category = next((_BADGE_CATEGORY[b] for b in badges if b in _BADGE_CATEGORY), "기타")
 
     applicants = 0
     quota = 0
@@ -55,9 +73,9 @@ def _parse_card(item) -> Dict:
     return {
         "platform": "디너의여왕", "title": title, "url": link,
         "region": parse_region_from_title(title),
-        "category": DINNERQUEEN_CATEGORY_MAP.get("taste", "음식점"),
+        "category": category,
         "reward": {"text": offer or "상세페이지 참조", "value": reward_value},
-        "meta": {"type": map_channel("", title), "dday": dday},
+        "meta": {"type": channel, "dday": dday},
         "image_url": img,
         "stats": {"applicants": applicants, "quota": quota},
     }

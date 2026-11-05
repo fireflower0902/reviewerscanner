@@ -1,6 +1,9 @@
 // 마감 표기 보정: 데이터는 수집 시점 기준으로 "5일 남음"처럼 저장되어 있으므로,
 // 수집 이후 날짜가 바뀐 만큼(한국 시간 기준) 화면에서 줄여서 보여준다.
 
+/** 당일 마감 표기를 하나로 통일 */
+export const TODAY_LABEL = '오늘마감';
+
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 function kstDateString(d: Date): string {
@@ -22,7 +25,7 @@ export function shiftDday(dday: string, daysPassed: number): string | null {
     if (m) {
         const remain = parseInt(m[1], 10) - daysPassed;
         if (remain < 0) return null;
-        return remain === 0 ? '오늘까지' : `${remain}일 남음`;
+        return remain === 0 ? TODAY_LABEL : `${remain}일 남음`;
     }
     if (dday.includes('오늘')) return null; // '오늘까지', '오늘마감' — 하루라도 지나면 마감
     return dday;
@@ -39,4 +42,12 @@ export async function readJsonMaybeGzip<T>(res: Response): Promise<T> {
         text = new TextDecoder().decode(bytes);
     }
     return JSON.parse(text) as T;
+}
+
+/** 마감 표기 통일: '오늘까지' / '오늘 마감' / '0일 남음' / 'D-DAY' -> '오늘마감' */
+export function normalizeDday(dday: string): string {
+    if (!dday) return dday;
+    const t = dday.trim();
+    if (/^0\s*일\s*남음$/.test(t) || /^오늘\s*(까지|마감)$/.test(t) || /^D-?DAY$/i.test(t) || /^D-0$/i.test(t)) return TODAY_LABEL;
+    return dday;
 }
