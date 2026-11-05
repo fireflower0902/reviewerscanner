@@ -61,8 +61,12 @@ def parse_items(html_fragment: str, mapped_category: str) -> List[Dict]:
             reward_text = sub_tit.get_text(strip=True) if sub_tit else ""
             reward_value = normalize_reward(reward_text)
 
+            # 일반 항목은 span.dday("6일 남음"), 오늘 마감 항목은 span.label 안의 em.last_d("오늘마감")에 있다
             dday_node = item.select_one("span.dday")
             dday = dday_node.get_text(strip=True) if dday_node else ""
+            if not dday:
+                last_node = item.select_one("span.label em.last_d")
+                dday = last_node.get_text(strip=True) if last_node else ""
 
             label_node = item.select_one("span.label")
             raw_type = ""

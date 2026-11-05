@@ -81,6 +81,8 @@ def normalize_dday(text: str) -> str:
     if not text:
         return text
     t = text.strip()
+    if re.match(r'^0\s*일\s*남음$', t):   # 당일 마감: "0일 남음" -> "오늘까지" (다른 사이트와 표기 통일)
+        return "오늘까지"
     m = re.match(r'^D\s*-\s*(\d+)$', t, re.IGNORECASE)
     if m:
         n = int(m.group(1))
