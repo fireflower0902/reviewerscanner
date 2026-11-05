@@ -104,3 +104,15 @@ def load_part(name: str, max_age_hours: float = 36, now=None, client=None) -> Li
         items.append(it)
     print(f"[R2] part '{name}': {len(items)}개 사용 (수집 후 {age_hours:.1f}시간, 마감 경과 {dropped}개 제외)")
     return items
+
+
+def load_previous(client=None):
+    """직전에 올린 전체 데이터 파일과 그 생성 시각(ISO)을 읽는다. 없거나 읽기 실패면 ([], None)."""
+    try:
+        obj = (client or _client()).get_object(Bucket=os.environ["R2_BUCKET"], Key=OBJECT_KEY)
+        items = json.loads(gzip.decompress(obj["Body"].read()).decode("utf-8"))
+        generated_at = (obj.get("Metadata") or {}).get("generated-at")
+        return items, generated_at
+    except Exception as e:
+        print(f"[R2] 직전 데이터를 읽지 못했습니다(유지 기능 건너뜀): {type(e).__name__}")
+        return [], None

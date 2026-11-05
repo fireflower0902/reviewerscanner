@@ -7,14 +7,16 @@ on:
   # GitHub Actions 탭에서 수동으로도 실행할 수 있도록 버튼 생성
   workflow_dispatch:
 
-# 동시에 두 번 돌지 않도록 순서대로 실행 (R2 파일을 동시에 덮어쓰는 것 방지)
+# 새 실행이 시작되면 같은 그룹의 이전 실행(멈춘 실행 포함)을 취소하고 대체한다.
+# (예전에는 순서대로 대기하게 했는데, 한 실행이 멈추면 뒤따르는 정각 실행이 전부 막혔다)
 concurrency:
   group: crawler
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   run-crawler:
     runs-on: ubuntu-latest
+    timeout-minutes: 30   # 정상은 5~6분. 어떤 이유로 멈추면 30분 뒤 강제 종료(기본값은 6시간)
 
     steps:
       # 1. GitHub에서 내 코드 복사해오기
