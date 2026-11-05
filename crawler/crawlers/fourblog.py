@@ -1,5 +1,6 @@
 import re
 import sys
+import collections
 import os
 from typing import List, Dict
 from bs4 import BeautifulSoup
@@ -18,6 +19,23 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     print("[4Blog] Starting crawl...")
     results = []
     page = await context.new_page()
+
+    # 진단: 스크롤 시 목록 API(loadMoreDataCategoryV2) 응답 상태를 기록해 차단 여부를 확인한다
+    xhr_status = collections.Counter()
+    xhr_failures = []
+
+    def _on_response(resp):
+        if resp.url.startswith("https://4blog.net/") and resp.request.resource_type in ("xhr", "fetch"):
+            xhr_status[resp.status] += 1
+            if resp.status >= 400 and len(xhr_failures) < 3:
+                xhr_failures.append(f"{resp.status} {resp.url[:110]}")
+
+    def _on_request_failed(req):
+        if req.url.startswith("https://4blog.net/") and len(xhr_failures) < 3:
+            xhr_failures.append(f"FAILED {req.failure} {req.url[:110]}")
+
+    page.on("response", _on_response)
+    page.on("requestfailed", _on_request_failed)
 
     try:
         url = "https://4blog.net/list/coupon,blog,instar21,reels,youtube21,shorts,tiktok,threads,ncafe,naverclip,danggeun,xtwitter,etc/local"
@@ -48,6 +66,14 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                     break
             if (i+1) % 10 == 0:
                 print(f"  [4Blog] Scroll {i+1} times... ({prev_count} links)")
+
+        print(f"  [4Blog] XHR status counts: {dict(xhr_status)}")
+        for f in xhr_failures:
+            print(f"  [4Blog] XHR problem: {f}")
+        try:
+            print(f"  [4Blog] page title: {await page.title()!r}")
+        except Exception:
+            pass
 
         html = await page.content()
         soup = BeautifulSoup(html, 'html.parser')

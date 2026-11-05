@@ -75,6 +75,9 @@ async def crawl(context: BrowserContext) -> List[Dict]:
         print(f"[Gangnam] Homepage status: {resp.status if resp else 'none'}")
     except Exception as e:
         print(f"[Gangnam] Homepage load failed: {str(e).splitlines()[0]}")
+        print("[Gangnam] ⚠ 홈페이지에 접속할 수 없어(이 네트워크에서 차단 추정) 수집을 건너뜁니다")
+        await page.close()
+        return []
 
     try:
         for ca_code, mapped_category in GANGNAM_CATEGORY_MAP.items():

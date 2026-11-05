@@ -1,7 +1,7 @@
 """
 리뷰어스캐너 크롤러 오케스트레이터
 - 9개 사이트별 모듈이 각자 독립 브라우저로 동시 실행
-- asyncio.Semaphore(5)로 최대 5개 동시 실행 제한 (GitHub Actions 메모리 보호)
+- asyncio.Semaphore(CRAWLER_CONCURRENCY, 기본 9)로 동시 실행 수 제한 (GitHub Actions 메모리 보호)
 - 각 모듈 위치: crawler/crawlers/{사이트명}.py
 """
 import asyncio
@@ -32,8 +32,8 @@ _CRAWLERS = [
 
 
 async def run_aggregator():
-    # 최대 5개 크롤러 동시 실행 (Chromium 메모리 ~700MB/개 × 5 = 3.5GB, GitHub Actions 7GB 이내)
-    sem = asyncio.Semaphore(5)
+    # 동시 실행 수 (기본 9 = 전부 동시). Chromium ~700MB/개 × 9 ≈ 6GB — 공개 저장소용 GitHub 러너(16GB) 기준
+    sem = asyncio.Semaphore(int(os.environ.get("CRAWLER_CONCURRENCY", "9")))
 
     async def run_with_sem(name: str, run_func) -> List[Dict]:
         async with sem:
