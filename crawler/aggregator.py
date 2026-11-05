@@ -1,6 +1,7 @@
 """
 리뷰어스캐너 크롤러 오케스트레이터
-- 9개 사이트별 모듈이 각자 독립 브라우저로 동시 실행
+- 8개 사이트별 모듈이 각자 독립 브라우저로 동시 실행
+- 강남맛집은 해외 IP(GitHub Actions)에서 접속이 차단되어 별도 기기가 수집(run_kangnam.py)하고, 여기서는 R2의 부분 파일을 합친다
 - asyncio.Semaphore(CRAWLER_CONCURRENCY, 기본 9)로 동시 실행 수 제한 (GitHub Actions 메모리 보호)
 - 각 모듈 위치: crawler/crawlers/{사이트명}.py
 """
@@ -13,13 +14,12 @@ from typing import List, Dict
 
 from helpers import normalize_dday
 
-from crawlers import kangnam, reviewplace, reviewnote, dinnerqueen
+from crawlers import reviewplace, reviewnote, dinnerqueen
 from crawlers import seouloppa, cometoplay, revu, fourblog, ohmyblog
 
 MIN_ITEMS_TO_UPLOAD = int(os.environ.get("MIN_ITEMS_TO_UPLOAD", "5000"))
 
 _CRAWLERS = [
-    ("강남맛집",    kangnam.run),
     ("리뷰플레이스", reviewplace.run),
     ("리뷰노트",    reviewnote.run),
     ("디너의여왕",  dinnerqueen.run),
@@ -51,6 +51,12 @@ async def run_aggregator():
     results_list = await asyncio.gather(*tasks)
 
     all_campaigns: List[Dict] = [item for sublist in results_list for item in sublist]
+    # 한국 IP 기기가 별도로 수집해 R2에 올린 부분 파일(강남맛집) 합치기
+    import r2_client
+    if r2_client.is_configured():
+        max_age = float(os.environ.get("KANGNAM_MAX_AGE_HOURS", "36"))
+        all_campaigns.extend(r2_client.load_part("kangnam", max_age_hours=max_age))
+
     for c in all_campaigns:
         c["meta"]["dday"] = normalize_dday(c["meta"].get("dday", ""))
     random.shuffle(all_campaigns)

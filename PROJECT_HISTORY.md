@@ -250,3 +250,23 @@ python -c "import asyncio; from crawlers import kangnam; r=asyncio.run(kangnam.r
 **검증**: `next build` 통과. R2 함수를 흉내 낸 로컬 서버로 14,232건 로드·검색(동탄 108건) 정상, 콘솔 오류 없음. 업로더는 가짜 boto3로 호출 인자·한글 왕복 확인. **실제 R2 업로드와 Cloudflare Pages 배포는 미검증.**
 
 **배포 시 남은 작업**: Pages 프로젝트 생성(빌드 `npm run build`, 출력 `out`) → R2 바인딩 `DATA_BUCKET` 추가 → `scan.reviewerscanner.com` 등록 → 호스팅KR CNAME 변경 → main에 반영 후 Actions 수동 실행.
+
+---
+
+## 12. 강남맛집: 한국 IP 기기에서 수집 (2026-11-05)
+
+**원인(확정)**: 강남맛집은 GitHub Actions(미국 IP)에서 연결 자체가 맺어지지 않음(`curl connect=0`, 20개 해외 점검 서버도 전부 실패, 한국 가정용 IP는 정상). 브라우저 문제가 아니라 IP 문제. 같은 서버에서 리뷰플레이스·구글은 정상.
+
+**구조**
+```
+[한국 IP Mac] run_kangnam.py (1시간마다, launchd) → R2 v1/parts/kangnam.json.gz
+[GitHub Actions] 나머지 8곳 수집 + 부분 파일 병합(36시간 이내만) → R2 v1/campaigns.json.gz
+```
+- `crawlers/kangnam.py`: Playwright 제거, requests만 사용(4,814건 / 9~27초)
+- `r2_client.py`: `upload_part` / `load_part` (신선도 36시간, 수집 후 지난 날짜만큼 `N일 남음` 보정, 마감 지난 항목 제외)
+- `helpers.shift_dday`, `crawler/run_kangnam.py`, `scripts/mac/install_kangnam_job.sh` (등록) / `uninstall_kangnam_job.sh` (제거)
+- Mac 작업은 `~/.reviewerscanner/`에 복사해서 실행(`~/Documents`는 launchd가 접근 못 할 수 있음). 코드 수정 후에는 install 스크립트 재실행
+- R2 토큰은 `~/.config/reviewerscanner/r2.env`(권한 600)에만 저장. GitHub Secrets와 별도의 **버킷 범위 토큰** 사용 권장
+
+**한계**: Mac이 꺼져 있거나 VPN(해외 IP)이면 갱신 안 됨 → 36시간 뒤 사이트에서 강남맛집 제외. 하루 1회 자동 깨우기: `sudo pmset repeat wakeorpoweron MTWRFSU 07:55:00`
+**미검증**: 실제 launchd 등록·실행, 실제 R2 업로드/병합, 포블로그 원인(진단 로그 대기).

@@ -88,3 +88,19 @@ def normalize_dday(text: str) -> str:
     if t.upper().replace(" ", "") in ("D-DAY", "DDAY"):
         return "오늘까지"
     return t
+
+
+def shift_dday(dday: str, days_passed: int):
+    """수집한 지 days_passed일이 지난 데이터의 마감 표기를 보정한다.
+    '5일 남음' -> '3일 남음'(2일 경과), 마감일이 지났으면 None(제외)을 반환한다."""
+    if days_passed <= 0 or not dday:
+        return dday
+    m = re.search(r'(\d+)\s*일\s*남음', dday)
+    if m:
+        remain = int(m.group(1)) - days_passed
+        if remain < 0:
+            return None
+        return "오늘까지" if remain == 0 else f"{remain}일 남음"
+    if "오늘" in dday:  # '오늘까지', '오늘마감' — 하루라도 지나면 마감
+        return None
+    return dday
