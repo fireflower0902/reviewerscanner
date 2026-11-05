@@ -27,3 +27,16 @@ export function shiftDday(dday: string, daysPassed: number): string | null {
     if (dday.includes('오늘')) return null; // '오늘까지', '오늘마감' — 하루라도 지나면 마감
     return dday;
 }
+
+/** fetch 응답을 JSON으로 읽는다. 서버/중간 단계 설정 때문에 gzip이 풀리지 않고 도착해도(앞 2바이트 1f 8b) 직접 해제한다. */
+export async function readJsonMaybeGzip<T>(res: Response): Promise<T> {
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    let text: string;
+    if (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b && typeof DecompressionStream !== 'undefined') {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        text = await new Response(stream).text();
+    } else {
+        text = new TextDecoder().decode(bytes);
+    }
+    return JSON.parse(text) as T;
+}

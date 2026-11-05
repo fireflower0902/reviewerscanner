@@ -16,7 +16,10 @@ export async function onRequestGet({ env }) {
   // 수집 시작 시각(크롤러가 R2 메타데이터에 기록). 브라우저가 마감 표기를 날짜 기준으로 보정하는 데 쓴다
   const generatedAt = object.customMetadata && object.customMetadata['generated-at'];
 
+  // encodeBody: 'manual' — R2에 이미 gzip으로 저장된 본문이므로 Cloudflare가 다시 압축하지 않게 한다
+  // (생략하면 이중 압축되어 브라우저가 한 겹만 풀고 JSON 읽기에 실패한다)
   return new Response(object.body, {
+    encodeBody: 'manual',
     headers: {
       ...(generatedAt ? { 'X-Generated-At': generatedAt } : {}),
       'Content-Type': 'application/json; charset=utf-8',

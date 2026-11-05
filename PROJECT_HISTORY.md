@@ -295,3 +295,13 @@ python -c "import asyncio; from crawlers import kangnam; r=asyncio.run(kangnam.r
 - install 스크립트: launchd 라벨 `com.reviewerscanner.local-sources`로 변경(이전 `kangnam` 작업 자동 정리), 로그 `~/Library/Logs/reviewerscanner-local.log`
 
 **미검증/주의**: 신청자·모집 인원 매핑(`REVIEWER_REQ_CNT`/`REVIEWER_CNT`)은 추정. `normalize_reward`가 "2인 식사"의 2를 금액으로 읽는 기존 문제는 그대로. 지역 매핑 일부 오류(예: "[대구/대명동]" → 서울 중구)는 `region_mapper` 한계.
+
+---
+
+## 15. 운영 장애: 브라우저에서 "데이터를 불러오지 못했습니다" (2026-11-05)
+
+**증상**: `reviewerscanner.pages.dev`에서 목록이 안 뜸. API(`/api/campaigns`)는 curl/파이썬으로는 200·정상.
+**원인**: Pages 함수가 R2의 gzip 본문에 `Content-Encoding: gzip`만 붙였더니 Cloudflare가 **한 번 더 gzip**(이중 압축). 브라우저는 한 겹만 풀어 `1f 8b`(gzip)가 남고 `res.json()`이 `Unexpected token '\x1f'`로 실패.
+**놓친 이유**: 로컬 가짜 서버(이중 압축 없음)와 curl/파이썬으로만 확인하고, 실제 Cloudflare 위에서 **브라우저로** 확인하지 않았음.
+**수정**: ① 함수 응답에 `encodeBody: 'manual'` ② 브라우저가 gzip이 그대로 와도 `DecompressionStream`으로 직접 해제(`readJsonMaybeGzip`). 이중 gzip 재현 서버로 정상/장애 두 경우 모두 통과 확인.
+**교훈**: 배포 후에는 Playwright 등으로 운영 URL을 실제 브라우저로 한 번 열어 확인할 것(`prod_check` 방식).

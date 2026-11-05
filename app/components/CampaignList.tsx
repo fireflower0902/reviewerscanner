@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Campaign } from '../types/campaign';
-import { kstDaysPassed, shiftDday } from '../lib/dday';
+import { kstDaysPassed, shiftDday, readJsonMaybeGzip } from '../lib/dday';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, Menu } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function CampaignList() {
         fetch(DATA_URL, { signal: controller.signal })
             .then(async (res) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return { data: (await res.json()) as Campaign[], generatedAt: res.headers.get('x-generated-at') };
+                return { data: await readJsonMaybeGzip<Campaign[]>(res), generatedAt: res.headers.get('x-generated-at') };
             })
             .then(({ data, generatedAt }) => {
                 const list = Array.isArray(data) ? data : [];
