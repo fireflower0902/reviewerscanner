@@ -279,3 +279,19 @@ python -c "import asyncio; from crawlers import kangnam; r=asyncio.run(kangnam.r
 - aggregator가 수집 시작 시각을 R2 메타데이터 `generated-at`으로 기록 → Pages 함수가 `X-Generated-At` 헤더로 전달 → `app/lib/dday.ts`가 (오늘 − 생성일, 한국 시간)만큼 `N일 남음`을 줄이고 마감 지난 항목은 목록에서 제외
 - 헤더가 없으면(로컬 개발 등) 보정 없음. 로딩 중에는 건수 배지 숨김
 - 검증: 가짜 서버로 헤더를 2일 전으로 설정 → 화면 13,462건 = 파이썬 기대값(14,232 − 마감 770). **실제 R2 메타데이터가 함수까지 전달되는지는 미검증**
+
+---
+
+## 14. 포블로그도 Mac 수집으로 전환 (2026-11-05)
+
+**원인(로그로 확인)**: GitHub Actions에서 포블로그의 "더 불러오기" 요청이 **403**.
+`[4Blog] XHR problem: 403 https://4blog.net/loadMoreDataCategoryV2?offset=30...` / `status counts {200: 4, 204: 1, 403: 1}`.
+첫 30건은 받지만 이후 목록 요청을 Cloudflare 봇 방어가 데이터센터 IP에서 거부(한국 가정용 IP에서는 200). 강남맛집(연결 자체 불가)과 방식은 다르지만 해결책은 같음.
+
+**변경**
+- `crawlers/fourblog.py`: 스크롤 대신 목록 API(`loadMoreDataCategoryV2`)를 직접 호출(requests). 기존 DOM 방식과 **729건 동일**(공통 729 / 한쪽만 0), 4~6초. 보상문구 정리(HTML 문자·줄바꿈·150자), 채널은 API `CATEGORY`로 매핑(기존 '기타' 78 → 6), `REMAINDATE`로 마감 표기 보강
+- `run_kangnam.py` → `run_local_sources.py`: 강남맛집·포블로그를 각각 독립 수집·업로드(한쪽 실패해도 다른 쪽 진행)
+- aggregator: `LOCAL_PARTS = ["kangnam", "fourblog"]` 병합, 포블로그 크롤러는 Actions에서 제외
+- install 스크립트: launchd 라벨 `com.reviewerscanner.local-sources`로 변경(이전 `kangnam` 작업 자동 정리), 로그 `~/Library/Logs/reviewerscanner-local.log`
+
+**미검증/주의**: 신청자·모집 인원 매핑(`REVIEWER_REQ_CNT`/`REVIEWER_CNT`)은 추정. `normalize_reward`가 "2인 식사"의 2를 금액으로 읽는 기존 문제는 그대로. 지역 매핑 일부 오류(예: "[대구/대명동]" → 서울 중구)는 `region_mapper` 한계.

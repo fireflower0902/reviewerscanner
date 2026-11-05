@@ -1,5 +1,5 @@
 #!/bin/bash
-# 강남맛집 수집을 Mac에서 1시간마다 실행하도록 등록한다 (launchd).
+# 강남맛집·포블로그 수집을 Mac(한국 가정용 IP)에서 1시간마다 실행하도록 등록한다 (launchd).
 # 사용법: bash scripts/mac/install_kangnam_job.sh
 #  - 처음 실행하면 R2 설정 파일(~/.config/reviewerscanner/r2.env) 템플릿만 만들고 종료한다.
 #    값을 채운 뒤 다시 실행하면 등록된다.
@@ -10,9 +10,11 @@ SRC="$(cd "$(dirname "$0")/../.." && pwd)"
 HOME_DIR="$HOME/.reviewerscanner"            # ~/Documents 는 launchd가 접근하지 못할 수 있어 별도 위치에 복사해서 실행
 ENV_DIR="$HOME/.config/reviewerscanner"
 ENV_FILE="$ENV_DIR/r2.env"
-LABEL="com.reviewerscanner.kangnam"
+LABEL="com.reviewerscanner.local-sources"
+OLD_LABEL="com.reviewerscanner.kangnam"          # 이전 버전(강남맛집 단독) 작업 — 있으면 정리
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-LOG="$HOME/Library/Logs/reviewerscanner-kangnam.log"
+OLD_PLIST="$HOME/Library/LaunchAgents/$OLD_LABEL.plist"
+LOG="$HOME/Library/Logs/reviewerscanner-local.log"
 
 mkdir -p "$ENV_DIR" && chmod 700 "$ENV_DIR"
 if [ ! -f "$ENV_FILE" ]; then
@@ -52,7 +54,7 @@ cat > "$PLIST" <<EOT
   <key>ProgramArguments</key>
   <array>
     <string>$HOME_DIR/venv/bin/python</string>
-    <string>$HOME_DIR/crawler/run_kangnam.py</string>
+    <string>$HOME_DIR/crawler/run_local_sources.py</string>
   </array>
   <key>WorkingDirectory</key><string>$HOME_DIR/crawler</string>
   <key>StartInterval</key><integer>3600</integer>
@@ -63,6 +65,11 @@ cat > "$PLIST" <<EOT
 </plist>
 EOT
 
+if [ -f "$OLD_PLIST" ]; then
+  launchctl bootout "gui/$(id -u)" "$OLD_PLIST" 2>/dev/null || true
+  rm -f "$OLD_PLIST"
+  echo "→ 이전 작업($OLD_LABEL) 정리"
+fi
 launchctl bootout "gui/$(id -u)" "$PLIST" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
 launchctl kickstart -k "gui/$(id -u)/$LABEL"
