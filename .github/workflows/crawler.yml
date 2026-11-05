@@ -29,15 +29,13 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
-      # 4. 🚨 중요: 보안키 만들기 (GitHub 암호화 기능 사용)
-      - name: Create Service Account Key from Secret
-        env:
-          FIREBASE_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-        run: |
-          echo "$FIREBASE_KEY" > crawler/serviceAccountKey.json
-
-      # 5. 크롤러 실행 (Firebase로 바로 Chunk 업로드됨)
+      # 4. 크롤러 실행 (결과는 Cloudflare R2에 업로드됨)
       - name: Run crawler aggregator
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           cd crawler
           python aggregator.py

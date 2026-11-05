@@ -6,11 +6,35 @@ import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, Menu } from 'lucide-react';
 
-interface CampaignListProps {
-    initialCampaigns: Campaign[];
-}
+// 데이터 파일 주소: 운영은 Cloudflare Pages Function(/api/campaigns, R2에서 읽음),
+// 로컬 개발은 크롤러가 만든 public/campaigns.json
+const DATA_URL = process.env.NODE_ENV === 'development' ? '/campaigns.json' : '/api/campaigns';
 
-export default function CampaignList({ initialCampaigns }: CampaignListProps) {
+export default function CampaignList() {
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [reloadKey, setReloadKey] = useState(0);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        setLoadState('loading');
+        fetch(DATA_URL, { signal: controller.signal })
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then((data: Campaign[]) => {
+                setCampaigns(Array.isArray(data) ? data : []);
+                setLoadState('ready');
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
+                console.error('Failed to load campaigns:', err);
+                setLoadState('error');
+            });
+        return () => controller.abort();
+    }, [reloadKey]);
+
     const [keyword, setKeyword] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -53,7 +77,7 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
 
 
     const filtered = useMemo(() => {
-        return initialCampaigns.filter(c => {
+        return campaigns.filter(c => {
             // 1. Keyword
             const matchesKeyword = c.title.toLowerCase().includes(keyword.toLowerCase()) ||
                 c.reward.text.toLowerCase().includes(keyword.toLowerCase());
@@ -101,7 +125,7 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
 
             return matchesKeyword && matchesPlatform && matchesRegion && matchesCategory && matchesChannel && matchesReward && matchesOpen;
         });
-    }, [initialCampaigns, keyword, filters]);
+    }, [campaigns, keyword, filters]);
 
     // Sorting logic
     const parseDDay = (ddayStr: string): number => {
@@ -164,7 +188,7 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
         <div className="flex min-h-screen bg-gray-50">
             {/* Sidebar */}
             <SidebarFilter
-                campaigns={initialCampaigns}
+                campaigns={campaigns}
                 filters={filters}
                 onFilterChange={setFilters}
                 isOpen={isSidebarOpen}
@@ -232,7 +256,23 @@ export default function CampaignList({ initialCampaigns }: CampaignListProps) {
                     </div>
 
                     {/* Grid */}
-                    {visibleCampaigns.length > 0 ? (
+                    {loadState === 'loading' ? (
+                        <div className="text-center py-32 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-500">캠페인을 불러오는 중입니다...</p>
+                        </div>
+                    ) : loadState === 'error' ? (
+                        <div className="text-center py-32 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                            <h3 className="text-lg font-medium text-gray-900">데이터를 불러오지 못했습니다</h3>
+                            <p className="text-gray-500 mt-2">잠시 후 다시 시도해주세요.</p>
+                            <button
+                                onClick={() => setReloadKey((k) => k + 1)}
+                                className="mt-6 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                다시 시도
+                            </button>
+                        </div>
+                    ) : visibleCampaigns.length > 0 ? (
                         <>
                             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                                 {visibleCampaigns.map((campaign, idx) => (

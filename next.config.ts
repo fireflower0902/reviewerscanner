@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // 정적 사이트로 빌드 (Cloudflare Pages). 데이터는 브라우저가 /api/campaigns에서 받음
+  output: 'export',
   images: {
+    unoptimized: true, // 정적 export에서는 이미지 최적화 서버 사용 불가
+
     remotePatterns: [
       {
         protocol: 'https',
