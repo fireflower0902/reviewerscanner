@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Campaign } from '../types/campaign';
 import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../lib/dday';
+import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters } from '../lib/defaults';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, Menu } from 'lucide-react';
@@ -54,22 +55,14 @@ export default function CampaignList() {
     const [isScrolled, setIsScrolled] = useState(false);
 
     // Complex Filter State
-    const [filters, setFilters] = useState({
-        platforms: [] as string[],
-        province: '',
-        cities: [] as string[],
-        categories: [] as string[], // New
-        channels: [] as string[],
-        minReward: 0,
-        hideClosed: false
-    });
+    const [filters, setFilters] = useState<Filters>(createDefaultFilters);   // 기본: 음식점 + 마감 숨기기
 
     // Infinite Scroll State
     const [visibleCount, setVisibleCount] = useState(40);
     const ITEMS_PER_PAGE = 40;
 
     // Sort State
-    const [sortBy, setSortBy] = useState<'newest' | 'deadline' | 'popular'>('newest');
+    const [sortBy, setSortBy] = useState<SortKey>(DEFAULT_SORT)   // 기본: 인기순;
 
     // Reset visible count when filters or sort change
     useEffect(() => {
@@ -323,16 +316,7 @@ export default function CampaignList() {
                             <button
                                 onClick={() => {
                                     setKeyword('');
-                                    setFilters(prev => ({
-                                        ...prev,
-                                        platforms: [],
-                                        province: '',
-                                        cities: [],
-                                        categories: [],
-                                        channels: [],
-                                        minReward: 0,
-                                        hideClosed: false
-                                    }));
+                                    setFilters(createDefaultFilters());
                                 }}
                                 className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >

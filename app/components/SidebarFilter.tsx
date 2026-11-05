@@ -1,5 +1,7 @@
 'use client';
 
+import { createDefaultFilters } from '../lib/defaults';
+
 import { useMemo } from 'react';
 import { Campaign } from '../types/campaign';
 import { X, Check } from 'lucide-react';
@@ -345,15 +347,7 @@ export default function SidebarFilter({
                     {/* Footer: Reset */}
                     <div className="pt-4 border-t border-gray-100">
                         <button
-                            onClick={() => onFilterChange({
-                                platforms: [],
-                                province: '',
-                                cities: [],
-                                categories: [],
-                                channels: [],
-                                minReward: 0,
-                                hideClosed: false
-                            })}
+                            onClick={() => onFilterChange(createDefaultFilters())}
                             className="w-full py-2 text-sm text-gray-500 hover:text-gray-900 underline decoration-gray-300 underline-offset-4 transition-colors"
                         >
                             필터 초기화

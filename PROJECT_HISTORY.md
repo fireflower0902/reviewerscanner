@@ -341,3 +341,12 @@ python -c "import asyncio; from crawlers import kangnam; r=asyncio.run(kangnam.r
 **검색**: 쉼표(,)로 구분한 모든 단어를 포함해야 통과(AND). 단어별로 제목/보상/지역/카테고리 중 어디든 있으면 됨. 입력칸 아래 안내 문구 추가. 화면 건수가 파이썬 기대값과 7개 케이스 모두 일치.
 
 **공유 이미지(카카오톡 등)**: 빌드된 `og:image`가 `http://localhost:3000/...`였음(metadataBase 미설정). → `metadataBase: https://scan.reviewerscanner.com`. 이미 공유한 링크는 카카오가 미리보기를 캐시하므로 [카카오 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에서 해당 URL을 다시 수집해야 반영됨.
+
+---
+
+## 19. 탭 아이콘, 첫 화면 기본값 (2026-11-05)
+
+**탭 아이콘**: 브라우저가 `<link rel="icon">` 중 먼저 나오는 `app/favicon.ico`(= Next.js 기본의 검은 원+삼각형)를 쓰고 있었음. 이전에 만든 파란 `icon.png`는 640×640·370KB로 무겁고 뒤에 밀림.
+→ 파란(#2563EB) 바탕 + 흰 돋보기로 새로 제작: `favicon.ico`(16/32/48), `icon.png`(512), `apple-icon.png`(180, 모서리 없는 정사각형). 16px 탭 크기까지 확대 검토함.
+
+**첫 접속 기본값** (`app/lib/defaults.ts`): 정렬 **인기순**, 카테고리 **음식점**, **마감된 캠페인 숨기기 켜짐**. 사용자가 바꾸는 건 자유이고 "필터 초기화"를 누르면 이 기본 상태로 돌아옴(이전에는 전체 해제). 검증: 처음 접속 건수 = 기대값, 정렬 신청자 수 내림차순, 전체/마감표시로 바꾸면 기대 건수.
