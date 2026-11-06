@@ -1,7 +1,9 @@
 import ChannelIcon from './ChannelIcon';
 import Image from 'next/image';
 import { Campaign } from '../types/campaign';
-import { MapPin, Gift, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { PLATFORM_ICONS } from '../lib/platformIcons';
+import { LocationIcon, RewardIcon, ApplicantIcon } from './CardIcons';
 
 interface CampaignCardProps {
     campaign: Campaign;
@@ -34,12 +36,24 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                 )}
                 <div className="absolute top-1.5 left-1.5 flex gap-1 flex-wrap max-w-[85%]">
                     <span className={`
-            px-1.5 py-0.5 text-[10px] font-bold rounded-md text-white shadow-sm leading-tight
+            inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md text-white shadow-sm leading-tight
             ${campaign.platform === '강남맛집' ? 'bg-orange-500' :
                             campaign.platform === '리뷰노트' ? 'bg-blue-500' :
                                 campaign.platform === '디너의여왕' ? 'bg-red-500' :
                                     campaign.platform === '서울오빠' ? 'bg-purple-500' :
                                         'bg-green-500'}`}>
+                        {PLATFORM_ICONS[campaign.platform] && (
+                            // 색이 있는 배지 위에서도 로고가 또렷하도록 흰 바탕 위에 올린다
+                            <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] bg-white">
+                                <img
+                                    src={PLATFORM_ICONS[campaign.platform]}
+                                    alt=""
+                                    width={12}
+                                    height={12}
+                                    className="h-3 w-3 rounded-[3px] object-contain"
+                                />
+                            </span>
+                        )}
                         {campaign.platform}
                     </span>
                     <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-indigo-500 text-white shadow-sm leading-tight">
@@ -61,7 +75,7 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                         {campaign.meta.type}
                     </span>
                     <span className="flex items-center gap-0.5 leading-tight">
-                        <MapPin size={10} />
+                        <LocationIcon size={13} />
                         {campaign.region.normalized}
                     </span>
                 </div>
@@ -71,14 +85,14 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                 </h3>
 
                 <div className="flex items-start gap-1.5 text-xs text-gray-600 bg-gray-50 p-1.5 rounded-lg mb-2 sm:mb-3">
-                    <Gift size={12} className="mt-0.5 shrink-0 text-red-400" />
+                    <RewardIcon size={16} className="mt-px" />
                     <p className="line-clamp-2 text-[10px] sm:text-xs">{campaign.reward.text}</p>
                 </div>
 
                 {campaign.stats && (
                     <div className="flex items-center justify-end text-[10px] sm:text-xs font-medium border-t border-gray-100 pt-2 mt-auto">
                         <div className="flex items-center gap-1 text-gray-600 bg-gray-50 px-1.5 py-0.5 rounded">
-                            <span className="text-gray-400">👤</span>
+                            <ApplicantIcon size={14} />
                             <span>신청 <strong className="text-gray-900">{campaign.stats.applicants}</strong></span>
                             <span className="text-gray-300 mx-0.5">/</span>
                             <span className="text-gray-500">모집 {campaign.stats.quota}</span>
