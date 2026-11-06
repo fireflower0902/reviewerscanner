@@ -2,7 +2,7 @@ import ChannelIcon from './ChannelIcon';
 import Image from 'next/image';
 import { Campaign } from '../types/campaign';
 import { Clock } from 'lucide-react';
-import { PLATFORM_ICONS } from '../lib/platformIcons';
+import { PLATFORM_ICONS, PLATFORM_BADGE, PLATFORM_BADGE_FALLBACK } from '../lib/platformIcons';
 import { LocationIcon, RewardIcon, ApplicantIcon } from './CardIcons';
 
 interface CampaignCardProps {
@@ -35,13 +35,7 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                     </div>
                 )}
                 <div className="absolute top-1.5 left-1.5 flex gap-1 flex-wrap max-w-[85%]">
-                    <span className={`
-            inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md text-white shadow-sm leading-tight
-            ${campaign.platform === '강남맛집' ? 'bg-orange-500' :
-                            campaign.platform === '리뷰노트' ? 'bg-blue-500' :
-                                campaign.platform === '디너의여왕' ? 'bg-red-500' :
-                                    campaign.platform === '서울오빠' ? 'bg-purple-500' :
-                                        'bg-green-500'}`}>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md shadow-sm leading-tight ${PLATFORM_BADGE[campaign.platform] ?? PLATFORM_BADGE_FALLBACK}`}>
                         {PLATFORM_ICONS[campaign.platform] && (
                             // 색이 있는 배지 위에서도 로고가 또렷하도록 흰 바탕 위에 올린다
                             <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] bg-white">
