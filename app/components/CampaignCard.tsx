@@ -1,3 +1,4 @@
+import ChannelIcon from './ChannelIcon';
 import Image from 'next/image';
 import { Campaign } from '../types/campaign';
 import { MapPin, Gift, Clock } from 'lucide-react';
@@ -55,7 +56,8 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
 
             <div className="p-2 sm:p-4">
                 <div className="flex flex-wrap items-center gap-1 mb-1.5 text-[10px] sm:text-xs font-medium text-gray-500">
-                    <span className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 leading-tight">
+                    <span className="flex items-center gap-1 px-1 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 leading-tight">
+                        <ChannelIcon channel={campaign.meta.type} size={14} />
                         {campaign.meta.type}
                     </span>
                     <span className="flex items-center gap-0.5 leading-tight">

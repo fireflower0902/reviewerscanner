@@ -13,14 +13,14 @@ export interface Filters {
     hideClosed: boolean;
 }
 
-/** 기본 필터: 카테고리 '음식점', 마감된 캠페인 숨기기 켜짐. (배열이 공유되지 않도록 매번 새로 만든다) */
+/** 기본 필터: 카테고리 '음식점', 채널 '네이버 블로그', 마감된 캠페인 숨기기 켜짐. (배열이 공유되지 않도록 매번 새로 만든다) */
 export function createDefaultFilters(): Filters {
     return {
         platforms: [],
         province: '',
         cities: [],
         categories: ['음식점'],
-        channels: [],
+        channels: ['네이버 블로그'],
         minReward: 0,
         hideClosed: true,
     };

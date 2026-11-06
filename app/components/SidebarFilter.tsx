@@ -1,5 +1,6 @@
 'use client';
 
+import ChannelIcon from './ChannelIcon';
 import { createDefaultFilters } from '../lib/defaults';
 import { PLATFORM_ICONS } from '../lib/platformIcons';
 
@@ -66,7 +67,7 @@ export default function SidebarFilter({
 
     // 3. Categories & Channels
     const categories = ['음식점', '뷰티', '여행', '숙박', '문화', '배달', '운동', '레저', '생활', '포장', '반려동물', '식품', '유아동', '기타'];
-    const channels = ['네이버 블로그', '인스타그램 릴스', '인스타그램 피드', '유튜브 동영상', '유튜브 숏츠', '네이버 클립'];
+    const channels = ['네이버 블로그', '네이버 클립', '인스타그램 릴스', '인스타그램 피드', '유튜브 동영상', '유튜브 숏츠'];   // 같은 서비스끼리 붙여서 표시
 
     // Handlers
     const togglePlatform = (platform: string) => {
@@ -218,40 +219,6 @@ export default function SidebarFilter({
                         </div>
                     </div>
 
-                    {/* Section: Channel */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                            채널 (활동 방식)
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => onFilterChange({ ...filters, channels: [] })}
-                                className={`
-                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
-                    ${(!filters.channels || filters.channels.length === 0)
-                                        ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
-                  `}
-                            >
-                                전체
-                            </button>
-                            {channels.map(channel => (
-                                <button
-                                    key={channel}
-                                    onClick={() => toggleChannel(channel)}
-                                    className={`
-                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
-                    ${filters.channels.includes(channel)
-                                            ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
-                  `}
-                                >
-                                    {channel}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Section: Region */}
                     <div>
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
@@ -309,6 +276,41 @@ export default function SidebarFilter({
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Section: Channel */}
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                            채널 (활동 방식)
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => onFilterChange({ ...filters, channels: [] })}
+                                className={`
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
+                    ${(!filters.channels || filters.channels.length === 0)
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
+                  `}
+                            >
+                                전체
+                            </button>
+                            {channels.map(channel => (
+                                <button
+                                    key={channel}
+                                    onClick={() => toggleChannel(channel)}
+                                    className={`
+                    inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
+                    ${filters.channels.includes(channel)
+                                            ? 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-200'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
+                  `}
+                                >
+                                    <ChannelIcon channel={channel} size={18} />
+                                    {channel}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Section: Reward */}
