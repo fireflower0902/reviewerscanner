@@ -6,7 +6,7 @@ import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../l
 import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters } from '../lib/defaults';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { useFilterDrawer } from './FilterDrawer';
 
 // 데이터 파일 주소: 운영은 Cloudflare Pages Function(/api/campaigns, R2에서 읽음),
@@ -51,7 +51,9 @@ export default function CampaignList() {
         return () => controller.abort();
     }, [reloadKey]);
 
-    const [keyword, setKeyword] = useState('');
+    // 검색어: 스페이스를 누르면 입력 중인 단어가 태그(칩)가 된다. 태그 + 입력 중인 단어를 모두 포함해야 통과(AND)
+    const [tags, setTags] = useState<string[]>([]);
+    const [keyword, setKeyword] = useState('');   // 아직 태그가 되지 않은 입력 중인 단어
     const { open: isSidebarOpen, setOpen: setIsSidebarOpen } = useFilterDrawer();   // 모바일 필터 서랍 (제목 줄의 '필터' 버튼과 공유)
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -68,7 +70,7 @@ export default function CampaignList() {
     // Reset visible count when filters or sort change
     useEffect(() => {
         setVisibleCount(ITEMS_PER_PAGE);
-    }, [keyword, filters, sortBy]);
+    }, [tags, keyword, filters, sortBy]);
 
     // 모바일 스크롤 감지: 조금이라도 내리면 isScrolled = true
     useEffect(() => {
@@ -83,17 +85,47 @@ export default function CampaignList() {
     // Platform initialization removed; default [] means 'All'
 
 
-    // 검색어를 쉼표로 나눠 공백을 정리한 단어 목록으로 만든다 ("화성시, 고기" -> ["화성시", "고기"])
+    // 공백을 모두 없애고 소문자로 바꾼 비교용 문자열 ("삼겹살구이" 로 검색해도 "삼겹살 구이" 가 찾아지도록)
+    const squash = (t: string) => t.replace(/\s+/g, '').toLowerCase();
+
+    // 태그 + 입력 중인 단어 → 비교용 단어 목록
     const keywordTerms = useMemo(
-        () => keyword.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
-        [keyword]
+        () => [...tags, keyword].map(squash).filter(Boolean),
+        [tags, keyword]
     );
+
+    // 입력창 변경: 공백(스페이스)이 들어오면 그 앞 단어들을 태그로 확정한다. (붙여넣기 "화성시 고기" 도 두 태그로 나뉨)
+    const handleKeywordChange = (value: string) => {
+        if (!/\s/.test(value)) {
+            setKeyword(value);
+            return;
+        }
+        const parts = value.split(/\s+/);
+        const rest = parts.pop() ?? '';   // 마지막 조각: 공백으로 끝났으면 '' , 아니면 아직 입력 중인 단어
+        const done = parts.filter(Boolean);
+        if (done.length > 0) {
+            setTags((prev) => {
+                const next = [...prev];
+                for (const w of done) if (!next.some((t) => squash(t) === squash(w))) next.push(w);
+                return next.slice(0, 10);
+            });
+        }
+        setKeyword(rest);
+    };
+
+    // 입력창이 비어 있을 때 백스페이스 → 마지막 태그 삭제 (한글 조합 중에는 동작하지 않음)
+    const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && keyword === '' && tags.length > 0 && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            setTags((prev) => prev.slice(0, -1));
+        }
+    };
 
     const filtered = useMemo(() => {
         return campaigns.filter(c => {
-            // 1. Keyword — 쉼표(,)로 구분한 모든 단어를 포함해야 통과(AND). 단어마다 제목/보상/지역/카테고리 중 어디든 있으면 됨
+            // 1. Keyword — 태그(칩)로 입력한 모든 단어를 포함해야 통과(AND). 단어마다 제목/보상/지역/카테고리 중 어디든 있으면 됨
             const matchesKeyword = keywordTerms.length === 0 || (() => {
-                const haystack = `${c.title} ${c.reward.text} ${c.region.normalized} ${c.category}`.toLowerCase();
+                const haystack = squash(`${c.title} ${c.reward.text} ${c.region.normalized} ${c.category}`);
                 return keywordTerms.every((term) => haystack.includes(term));
             })();
 
@@ -219,16 +251,35 @@ export default function CampaignList() {
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search className="h-5 w-5 text-gray-400" />
                             </div>
-                            <input
-                                type="text"
-                                className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition duration-150 ease-in-out"
-                                placeholder="캠페인 검색 (키워드, 보상 등) · 쉼표(,)로 여러 단어 입력"
-                                value={keyword}
-                                onChange={(e) => setKeyword(e.target.value)}
-                            />
+                            <div className="flex w-full flex-wrap items-center gap-1.5 pl-11 pr-4 py-2 min-h-[50px] border border-gray-300 rounded-xl bg-white shadow-sm transition duration-150 ease-in-out focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                                {tags.map((tag) => (
+                                    <span
+                                        key={tag}
+                                        className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 py-1 pl-2.5 pr-1.5 text-sm font-semibold text-blue-700"
+                                    >
+                                        {tag}
+                                        <button
+                                            type="button"
+                                            onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                                            aria-label={`${tag} 삭제`}
+                                            className="rounded p-0.5 text-blue-400 hover:bg-blue-100 hover:text-blue-700"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    </span>
+                                ))}
+                                <input
+                                    type="text"
+                                    className="min-w-[8rem] flex-1 bg-transparent py-1 leading-5 text-gray-900 placeholder-gray-500 outline-none"
+                                    placeholder={tags.length === 0 ? '캠페인 검색 (키워드, 보상 등) · 단어 입력 후 스페이스' : '단어 추가'}
+                                    value={keyword}
+                                    onChange={(e) => handleKeywordChange(e.target.value)}
+                                    onKeyDown={handleKeywordKeyDown}
+                                />
+                            </div>
                         </div>
                         <p className="mt-2 px-1 text-xs text-gray-500">
-                            💡 쉼표(,)로 구분하면 <b>모든 단어를 포함</b>한 캠페인만 보여줘요. 예) <span className="font-medium text-gray-700">화성시, 고기</span> (제목·보상·지역·카테고리에서 찾아요)
+                            💡 키워드를 입력하고 스페이스바를 누르세요. 여러 키워드를 입력하면 <b>모든 키워드를 포함</b>한 캠페인만 보여줍니다.
                         </p>
                     </div>
 
@@ -304,6 +355,7 @@ export default function CampaignList() {
                             <button
                                 onClick={() => {
                                     setKeyword('');
+                                    setTags([]);
                                     setFilters(createDefaultFilters());
                                 }}
                                 className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
