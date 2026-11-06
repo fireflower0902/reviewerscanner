@@ -22,7 +22,7 @@ async def run():
         try:
             await page.goto("https://www.revu.net/login", wait_until="networkidle")
             await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
-            await page.fill('input[name="password"]', 'Dkssuddy1!')
+            await page.fill('input[name="password"]', 'REDACTED')
             await page.get_by_text("로그인", exact=True).click()
             await page.wait_for_timeout(3000)
         except Exception as e:

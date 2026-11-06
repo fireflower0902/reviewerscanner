@@ -14,7 +14,7 @@ async def main():
         print("[Revu] Logging in...")
         await page.goto("https://www.revu.net/login", wait_until="networkidle")
         await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
-        await page.fill('input[name="password"]', 'Dkssuddy1!')
+        await page.fill('input[name="password"]', 'REDACTED')
         submit_btn = await page.query_selector('button[type="submit"]')
         if submit_btn:
              await submit_btn.click()

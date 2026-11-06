@@ -17,7 +17,7 @@ async def run():
             
             print("[2] 로그인 폼 분석 및 값 입력")
             await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
-            await page.fill('input[name="password"]', 'Dkssuddy1!')
+            await page.fill('input[name="password"]', 'REDACTED')
             
             submit_btn = await page.query_selector('button[type="submit"]')
             if submit_btn:
