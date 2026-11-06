@@ -53,3 +53,7 @@ __pycache__/
 debug_*.json
 public/campaigns.json
 revu_test_results.json
+
+# wrangler
+.wrangler/
+.dev.vars

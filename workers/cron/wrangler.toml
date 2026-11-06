@@ -1,0 +1,7 @@
+name = "reviewerscanner-cron"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# 30분마다(0분·30분에) GitHub Actions 크롤러를 직접 실행시킨다 (GitHub 자체 schedule 은 자주 건너뜀)
+[triggers]
+crons = ["*/30 * * * *"]

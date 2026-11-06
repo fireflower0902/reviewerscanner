@@ -394,3 +394,20 @@ GitHub 로그는 저장소 관리자 인증이 필요해 직접 읽을 수 없�
 **플랫폼 아이콘**: 필터의 플랫폼 이름 옆 20px. 각 사이트 공개 파비콘/앱 아이콘(강남맛집·서울오빠는 사용자 제공 이미지)을 64×64로 변환해 `public/platform-icons/` 에 보관(외부 핫링크 안 함). 사이트 로고라 상표 이슈 가능성은 사용자가 판단.
 
 **배포 누락 방지(.gitignore)**: `*.png` 규칙 때문에 `app/apple-icon.png`(이전 커밋에서 누락, 운영 404)와 `public/platform-icons/*.png` 가 저장소에 올라가지 않았음 → 예외 추가.
+
+---
+
+## 22. 예약 실행을 Cloudflare Worker로 이전 · 레뷰 계정 Secrets 이전 · 검색엔진 등록 (2026-11-06)
+
+**GitHub 자체 schedule 이 신뢰할 수 없음 (원인 확인)**
+- 기록상 4월부터 1~3시간 간격, 11-05 이후엔 약 6시간 간격, 마지막 자동 실행 후 8시간 이상 무실행. 워크플로 `active`, 저장소 정상, cron 시각을 `:00`→`:17,:47`로 옮겨도 동일 → GitHub의 best-effort 예약 실행이 건너뛰는 것이 원인으로 판단. 설정으로는 해결 불가.
+- 해결: `workers/cron/`(Cloudflare Worker, 이름 `reviewerscanner-cron`)가 `*/30 * * * *` 크론으로 GitHub API `POST /actions/workflows/crawler.yml/dispatches` 를 호출. 22:00:20 첫 정상 동작 확인(`dispatch -> 204`). `crawler.yml` 의 `schedule:` 은 제거(수동 `workflow_dispatch` 만 남김).
+- 비밀값: Worker 시크릿 `GITHUB_TOKEN` = fine-grained PAT(이 저장소 한정, Actions: Read and write, 만료 없음). 배포: `cd workers/cron && npx wrangler deploy`, 토큰 교체: `npx wrangler secret put GITHUB_TOKEN`. 로그 확인: `npx wrangler tail reviewerscanner-cron`.
+- 크론 변경 직후 첫 시각(21:30)은 전파 지연으로 실행되지 않은 것으로 추정(미확정).
+- concurrency `cancel-in-progress` 때문에 30분 간격 실행이 겹치면 앞선 실행은 취소되고 새 실행이 이어받는다(데이터는 `carry_over_missing`으로 보호).
+
+**레뷰 계정 이전**: 이메일/비밀번호를 코드에서 제거하고 `REVU_EMAIL`, `REVU_PASSWORD`(GitHub Secrets)로 전달. 없으면 레뷰만 건너뜀. 디버그 스크립트의 옛 비밀번호 문자열도 제거. 옛 값은 git 이력에 남지만 비밀번호를 교체했으므로 무효. (로그의 "Login success"는 결과 검증 없이 출력되는 문구 — 수집 건수로 간접 확인.)
+
+**서울오빠**: GitHub 서버에서 간헐적으로 `ERR_CONNECTION_TIMED_OUT`(05:00Z, 12:03Z 실패 / 23:17Z, 12:41Z, 13:00Z 성공). 영구 차단이 아님. 실패하면 직전 데이터 유지.
+
+**검색엔진 등록**: 네이버 서치어드바이저(메타 태그), 구글 서치콘솔(메타 태그), 다음 웹마스터도구(robots.txt 의 PIN 줄)는 모두 `app/layout.tsx`, `public/robots.txt` 로 인증. `public/sitemap.xml`, `public/robots.txt` 추가. PC 제목 아래 문구에 검색 키워드 반영("블로그 체험단 사이트 모음, 체험단 스캐너…").
