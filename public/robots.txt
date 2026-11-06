@@ -3,3 +3,5 @@ Allow: /
 Disallow: /api/
 
 Sitemap: https://scan.reviewerscanner.com/sitemap.xml
+
+#DaumWebMasterTool:8f64e5a0fd34141be6bd66f3d224d5dc2babc1c124eba42ff1e4500cbc323518:/aAUByYKcfoZ3ndOUzXW7w==
