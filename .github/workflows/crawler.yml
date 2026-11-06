@@ -43,6 +43,8 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          REVU_EMAIL: ${{ secrets.REVU_EMAIL }}
+          REVU_PASSWORD: ${{ secrets.REVU_PASSWORD }}
         run: |
           cd crawler
           python aggregator.py

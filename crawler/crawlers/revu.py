@@ -35,6 +35,13 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     print("[Revu] Starting crawl...")
     results = []
 
+    # 계정 정보는 환경변수(GitHub Secrets)에서만 읽는다 — 코드에 적지 않음
+    email = os.environ.get("REVU_EMAIL", "")
+    password = os.environ.get("REVU_PASSWORD", "")
+    if not email or not password:
+        print("[Revu] REVU_EMAIL / REVU_PASSWORD 환경변수가 없어 레뷰 수집을 건너뜁니다")
+        return results
+
     page = await context.new_page()
 
     # 1. 로그인
@@ -42,8 +49,8 @@ async def crawl(context: BrowserContext) -> List[Dict]:
         print("[Revu] Logging in...")
         await page.goto("https://www.revu.net/login", wait_until="domcontentloaded", timeout=60000)
         await page.wait_for_selector('input[name="email"]', timeout=20000)
-        await page.fill('input[name="email"]', 'reviewhyun@gmail.com')
-        await page.fill('input[name="password"]', 'Dkssuddy1!')
+        await page.fill('input[name="email"]', email)
+        await page.fill('input[name="password"]', password)
         submit_btn = await page.query_selector('button[type="submit"]')
         if submit_btn:
             await submit_btn.click()
