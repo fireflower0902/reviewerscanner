@@ -13,6 +13,8 @@ from category_mapper import OHMYBLOG_CATEGORY_MAP, extract_category_by_keyword
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
+MAX_PAGES = 300   # 정상은 20페이지 안팎. 이보다 많으면 비정상으로 보고 중단
+
 async def crawl(context: BrowserContext) -> List[Dict]:
     """오마이블로그 크롤링 (API 2단계 페이지네이션)"""
     print("[OhMyBlog] Starting crawl...")
@@ -37,14 +39,18 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     native_category_lookup = {}
     for cat_code, mapped_category in OHMYBLOG_CATEGORY_MAP.items():
         page_idx = 1
+        last_first_seq = None
         try:
-            while True:
+            while page_idx <= MAX_PAGES:    # 상한: API가 빈 응답을 주지 않아도 끝나도록
                 url = f"https://www.ohmyblog.co.kr/api/web/campaign/active?page={page_idx}&limit=100&app_type=A&app_cate_detail={cat_code}"
                 res = await context.request.get(url)
                 if not res.ok: break
                 data = await res.json()
                 campaigns = data.get('data', {}).get('campaigns', [])
                 if not campaigns: break
+                first_seq = str(campaigns[0].get('app_seq', ''))
+                if first_seq == last_first_seq: break    # 이전 페이지와 같은 내용이 반복되면 중단
+                last_first_seq = first_seq
                 for item in campaigns:
                     app_seq = str(item.get('app_seq', ''))
                     native_category_lookup[app_seq] = mapped_category
@@ -54,8 +60,9 @@ async def crawl(context: BrowserContext) -> List[Dict]:
 
     # 3. 전체 방문형 캠페인 조회
     page_idx = 1
+    last_first_seq = None
     try:
-        while True:
+        while page_idx <= MAX_PAGES:    # 상한: API가 빈 응답을 주지 않아도 끝나도록
             url = f"https://www.ohmyblog.co.kr/api/web/campaign/active?page={page_idx}&limit=20&app_type=A"
             res = await context.request.get(url)
             if not res.ok:
@@ -65,6 +72,11 @@ async def crawl(context: BrowserContext) -> List[Dict]:
             data = await res.json()
             campaigns = data.get('data', {}).get('campaigns', [])
             if not campaigns: break
+            first_seq = str(campaigns[0].get('app_seq', ''))
+            if first_seq == last_first_seq:
+                print(f"  [OhMyBlog] page {page_idx}가 이전 페이지와 같은 내용이라 중단합니다")
+                break
+            last_first_seq = first_seq
             print(f"  [OhMyBlog] Page {page_idx}: Found {len(campaigns)} items")
 
             for item in campaigns:

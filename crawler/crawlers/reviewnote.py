@@ -15,6 +15,16 @@ _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
 _BASE_IMG_URL = "https://firebasestorage.googleapis.com/v0/b/reviewnote-e92d9.appspot.com/o/"
 
 
+_FETCH_JS = """async (u) => {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 30000);
+    try {
+        const r = await fetch(u, { signal: c.signal });
+        return [r.status, r.ok ? await r.json() : null];
+    } finally { clearTimeout(t); }
+}"""
+
+
 async def crawl(context: BrowserContext) -> List[Dict]:
     """리뷰노트 크롤링 (API Pagination)"""
     print("[ReviewNote] Accessing API...")
@@ -36,9 +46,18 @@ async def crawl(context: BrowserContext) -> List[Dict]:
         api_url = f"https://www.reviewnote.co.kr/api/v2/campaigns?s=popular&limit={limit}&page={page_idx}"
         try:
             # 직접 요청은 403(봇 차단)이라 페이지 컨텍스트 안에서 fetch (Referer/Sec-Fetch 헤더 자동 포함)
-            fetched = await page.evaluate(
-                """async (u) => { const r = await fetch(u); return [r.status, r.ok ? await r.json() : null]; }""",
-                api_url)
+            # fetch에 30초 제한을 둔다(없으면 응답 하나가 멈출 때 크롤러 전체가 영원히 대기), 일시 오류는 2번 더 재시도
+            fetched = None
+            for attempt in range(3):
+                try:
+                    fetched = await page.evaluate(_FETCH_JS, api_url)
+                    break
+                except Exception as fetch_err:
+                    print(f"[ReviewNote] fetch 실패 page {page_idx} (시도 {attempt + 1}/3): {str(fetch_err).splitlines()[0][:120]}")
+                    await page.wait_for_timeout(1500)
+            if fetched is None:
+                print(f"[ReviewNote] page {page_idx}에서 3번 연속 실패 — 지금까지 수집한 {len(results)}건으로 마무리합니다")
+                break
             status, data = fetched
             if status != 200 or data is None:
                 print(f"[ReviewNote] API Error {status} at page {page_idx}")

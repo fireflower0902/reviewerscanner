@@ -34,12 +34,18 @@ async def crawl(context: BrowserContext) -> List[Dict]:
             while page_num < max_pages:
                 page_num += 1
                 try:
+                    # fetch에 30초 제한(없으면 응답 하나가 멈출 때 영원히 대기)
                     js_code = f"""async () => {{
-                        const response = await fetch('{base_url}?ct1=%EC%A7%80%EC%97%AD&ct2={encoded_ct2}&rpage={page_num}&device=pc', {{
-                            method: 'GET',
-                            headers: {{ 'Referer': 'https://www.reviewplace.co.kr/pr/?ct1=%EC%A7%80%EC%97%AD' }}
-                        }});
-                        return await response.text();
+                        const c = new AbortController();
+                        const t = setTimeout(() => c.abort(), 30000);
+                        try {{
+                            const response = await fetch('{base_url}?ct1=%EC%A7%80%EC%97%AD&ct2={encoded_ct2}&rpage={page_num}&device=pc', {{
+                                method: 'GET',
+                                headers: {{ 'Referer': 'https://www.reviewplace.co.kr/pr/?ct1=%EC%A7%80%EC%97%AD' }},
+                                signal: c.signal
+                            }});
+                            return await response.text();
+                        }} finally {{ clearTimeout(t); }}
                     }}"""
                     html_content = await page.evaluate(js_code)
 

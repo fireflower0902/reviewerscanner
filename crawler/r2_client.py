@@ -116,3 +116,14 @@ def load_previous(client=None):
     except Exception as e:
         print(f"[R2] 직전 데이터를 읽지 못했습니다(유지 기능 건너뜀): {type(e).__name__}")
         return [], None
+
+
+REPORT_KEY = "v1/run_report.json"
+
+
+def upload_report(report: Dict, client=None) -> None:
+    """사이트별 수집 결과(성공/실패/제한초과, 건수, 소요시간)를 R2에 남긴다. /api/status 로 누구나 볼 수 있다."""
+    body = json.dumps(report, ensure_ascii=False).encode("utf-8")
+    (client or _client()).put_object(
+        Bucket=os.environ["R2_BUCKET"], Key=REPORT_KEY, Body=body, ContentType="application/json"
+    )

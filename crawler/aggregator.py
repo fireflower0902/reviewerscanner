@@ -19,7 +19,7 @@ from crawlers import reviewplace, reviewnote, dinnerqueen
 from crawlers import seouloppa, cometoplay, revu, ohmyblog
 
 # 크롤러 하나가 이 시간(초) 넘게 응답하지 않으면 그 사이트만 포기하고 나머지는 계속 진행한다
-CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "900"))
+CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "600"))   # 정상은 사이트당 최대 5분 안팎
 MIN_ITEMS_TO_UPLOAD = int(os.environ.get("MIN_ITEMS_TO_UPLOAD", "5000"))
 
 # 한국 IP 기기가 별도로 수집해서 R2에 올리는 사이트(부분 파일 이름)
@@ -75,9 +75,12 @@ def carry_over_missing(new_items, prev_items, prev_generated_at, now=None,
 async def run_aggregator():
     # 마감 표기(N일 남음)는 수집 시점 기준이므로 시작 시각을 기록해 R2 메타데이터로 전달한다
     generated_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    run_started = time.time()
 
     # 동시 실행 수 (기본 9 = 전부 동시). Chromium ~700MB/개 × 9 ≈ 6GB — 공개 저장소용 GitHub 러너(16GB) 기준
     sem = asyncio.Semaphore(int(os.environ.get("CRAWLER_CONCURRENCY", "9")))
+
+    outcomes: List[Dict] = []   # 사이트별 결과 기록(→ run_report.json)
 
     async def run_with_sem(name: str, run_func) -> List[Dict]:
         async with sem:
@@ -86,12 +89,16 @@ async def run_aggregator():
             try:
                 results = await asyncio.wait_for(run_func(), timeout=CRAWLER_TIMEOUT)
                 print(f"[System] ✓ Done: {name} — {len(results)} items ({time.time() - started:.0f}s)")
+                outcomes.append({"name": name, "status": "ok", "count": len(results), "seconds": round(time.time() - started)})
                 return results
             except asyncio.TimeoutError:
                 print(f"[System] ✗ Timeout: {name} — {CRAWLER_TIMEOUT}초 안에 끝나지 않아 건너뜁니다")
+                outcomes.append({"name": name, "status": "timeout", "count": 0, "seconds": round(time.time() - started)})
                 return []
             except Exception as e:
                 print(f"[System] ✗ Failed: {name} — {e} ({time.time() - started:.0f}s)")
+                outcomes.append({"name": name, "status": "failed", "count": 0, "seconds": round(time.time() - started),
+                                 "error": f"{type(e).__name__}: {str(e)[:200]}"})
                 return []
 
     tasks = [run_with_sem(name, func) for name, func in _CRAWLERS]
@@ -106,9 +113,11 @@ async def run_aggregator():
             all_campaigns.extend(r2_client.load_part(part_name, max_age_hours=max_age))
 
     # 일부 사이트가 실패해 건수가 절반 아래로 줄었으면 그 사이트는 직전 데이터를 유지한다(목록에서 통째로 사라지는 것 방지)
+    carry_info: Dict = {}
     if r2_client.is_configured():
         prev_items, prev_generated_at = r2_client.load_previous()
         carried, info = carry_over_missing(all_campaigns, prev_items, prev_generated_at)
+        carry_info = {p: {"this_run": n, "previous": pv, "kept": k} for p, (n, pv, k) in info.items()}
         if info:
             all_campaigns = [c for c in all_campaigns if c["platform"] not in info] + carried
             for plat, (new_n, prev_n, kept) in info.items():
@@ -141,6 +150,21 @@ async def run_aggregator():
     if not r2_client.is_configured():
         print("[R2] R2_* 환경변수가 없어 업로드를 건너뜁니다 (로컬 실행)")
         return
+
+    # 실행 보고서(원인 추적용): 업로드 성공 여부와 무관하게 먼저 남긴다. 실패해도 본 작업에는 영향 없음
+    try:
+        r2_client.upload_report({
+            "generated_at": generated_at,
+            "finished_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "duration_seconds": round(time.time() - run_started),
+            "crawler_timeout_seconds": CRAWLER_TIMEOUT,
+            "total": len(all_campaigns),
+            "platform_counts": dict(counts),
+            "crawlers": sorted(outcomes, key=lambda o: o["name"]),
+            "carried_over": carry_info,
+        })
+    except Exception as e:
+        print(f"[R2] 실행 보고서 업로드 실패(무시): {e}")
 
     # 크롤러 대량 실패로 데이터가 크게 줄었을 때 기존 파일을 덮어쓰지 않는 안전장치
     if len(all_campaigns) < MIN_ITEMS_TO_UPLOAD:
