@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Campaign } from '../types/campaign';
 import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../lib/dday';
-import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters } from '../lib/defaults';
+import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters, normalizeCategory } from '../lib/defaults';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, X } from 'lucide-react';
@@ -30,7 +30,8 @@ export default function CampaignList() {
                 // 마감 표기 통일("오늘까지"/"0일 남음" -> "오늘마감") — 크롤러 데이터가 갱신되기 전에도 적용
                 const list = (Array.isArray(data) ? data : []).map((c) => {
                     const dday = normalizeDday(c.meta.dday);
-                    return dday === c.meta.dday ? c : { ...c, meta: { ...c.meta, dday } };
+                    const category = normalizeCategory(c.category);   // 배달·포장·식품 -> 음식점
+                    return dday === c.meta.dday && category === c.category ? c : { ...c, category, meta: { ...c.meta, dday } };
                 });
                 // 수집 이후 날짜가 바뀐 만큼 마감 표기를 보정 (헤더가 없으면 보정 없음)
                 const daysPassed = generatedAt ? kstDaysPassed(generatedAt) : 0;

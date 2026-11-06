@@ -66,7 +66,7 @@ export default function SidebarFilter({
     }, [campaigns]);
 
     // 3. Categories & Channels
-    const categories = ['음식점', '뷰티', '여행', '숙박', '문화', '배달', '운동', '레저', '생활', '포장', '반려동물', '식품', '유아동', '기타'];
+    const categories = ['음식점', '뷰티', '여행/숙박', '문화', '운동', '레저', '생활', '반려동물', '유아동', '기타'];   // 배달·포장·식품 -> 음식점, 여행·숙박 -> 여행/숙박 (app/lib/defaults.ts 의 CATEGORY_ALIAS)
     const channels = ['네이버 블로그', '네이버 클립', '인스타그램 릴스', '인스타그램 피드', '유튜브 동영상', '유튜브 숏츠'];   // 같은 서비스끼리 붙여서 표시
 
     // Handlers

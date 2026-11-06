@@ -25,3 +25,13 @@ export function createDefaultFilters(): Filters {
         hideClosed: true,
     };
 }
+
+/** 비슷한 카테고리는 하나로 합쳐서 보여준다 (표시·필터 모두 합쳐진 이름 사용). 크롤러 원본 데이터는 그대로 둔다. */
+export const CATEGORY_ALIAS: Record<string, string> = {
+    '배달': '음식점',
+    '포장': '음식점',
+    '식품': '음식점',
+    '여행': '여행/숙박',
+    '숙박': '여행/숙박',
+};
+export const normalizeCategory = (category: string): string => CATEGORY_ALIAS[category] ?? category;
