@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Campaign } from '../types/campaign';
 import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../lib/dday';
 import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters } from '../lib/defaults';
@@ -94,6 +94,17 @@ export default function CampaignList() {
         [tags, keyword]
     );
 
+    // 단어들을 태그로 확정 (이미 있는 단어는 건너뜀, 최대 10개)
+    const addTags = (words: string[]) => {
+        const done = words.map((w) => w.trim()).filter(Boolean);
+        if (done.length === 0) return;
+        setTags((prev) => {
+            const next = [...prev];
+            for (const w of done) if (!next.some((t) => squash(t) === squash(w))) next.push(w);
+            return next.slice(0, 10);
+        });
+    };
+
     // 입력창 변경: 공백(스페이스)이 들어오면 그 앞 단어들을 태그로 확정한다. (붙여넣기 "화성시 고기" 도 두 태그로 나뉨)
     const handleKeywordChange = (value: string) => {
         if (!/\s/.test(value)) {
@@ -102,19 +113,24 @@ export default function CampaignList() {
         }
         const parts = value.split(/\s+/);
         const rest = parts.pop() ?? '';   // 마지막 조각: 공백으로 끝났으면 '' , 아니면 아직 입력 중인 단어
-        const done = parts.filter(Boolean);
-        if (done.length > 0) {
-            setTags((prev) => {
-                const next = [...prev];
-                for (const w of done) if (!next.some((t) => squash(t) === squash(w))) next.push(w);
-                return next.slice(0, 10);
-            });
-        }
+        addTags(parts);
         setKeyword(rest);
     };
 
     // 입력창이 비어 있을 때 백스페이스 → 마지막 태그 삭제 (한글 조합 중에는 동작하지 않음)
+    const enterWhileComposing = useRef(false);   // 한글 조합 중 엔터를 눌렀는지 (조합이 끝난 뒤 태그로 확정)
+
     const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (e.nativeEvent.isComposing) {
+                enterWhileComposing.current = true;   // 첫 엔터는 한글 조합을 끝내는 키 → onCompositionEnd 에서 확정
+            } else if (keyword.trim()) {
+                addTags([keyword]);
+                setKeyword('');
+            }
+            return;
+        }
         if (e.key === 'Backspace' && keyword === '' && tags.length > 0 && !e.nativeEvent.isComposing) {
             e.preventDefault();
             setTags((prev) => prev.slice(0, -1));
@@ -271,15 +287,22 @@ export default function CampaignList() {
                                 <input
                                     type="text"
                                     className="min-w-[8rem] flex-1 bg-transparent py-1 leading-5 text-gray-900 placeholder-gray-500 outline-none"
-                                    placeholder={tags.length === 0 ? '캠페인 검색 (키워드, 보상 등) · 단어 입력 후 스페이스' : '단어 추가'}
+                                    placeholder={tags.length === 0 ? '캠페인 검색 (지역, 제공내역, 상호명 등)' : '키워드 추가'}
                                     value={keyword}
                                     onChange={(e) => handleKeywordChange(e.target.value)}
                                     onKeyDown={handleKeywordKeyDown}
+                                    onCompositionEnd={(e) => {
+                                        if (enterWhileComposing.current) {
+                                            enterWhileComposing.current = false;
+                                            addTags([e.currentTarget.value]);
+                                            setKeyword('');
+                                        }
+                                    }}
                                 />
                             </div>
                         </div>
                         <p className="mt-2 px-1 text-xs text-gray-500">
-                            💡 키워드를 입력하고 스페이스바를 누르세요. 여러 키워드를 입력하면 <b>모든 키워드를 포함</b>한 캠페인만 보여줍니다.
+                            💡 키워드를 입력하고 스페이스바/엔터를 누르세요. 여러 키워드를 입력하면 <b>모든 키워드를 포함</b>한 캠페인만 보여줍니다.
                         </p>
                     </div>
 
