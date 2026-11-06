@@ -42,7 +42,7 @@ export default function Hero() {
                         </h1>
                         {/* 모바일에서는 설명 문구 숨김 */}
                         <p className="hidden md:block text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
-                            모든 체험단을 한눈에. 지역별, 보상별 맞춤 검색.
+                            블로그 체험단 사이트 모음, 체험단 스캐너. 지역·보상별로 한눈에 찾아보세요.
                         </p>
                     </div>
 
