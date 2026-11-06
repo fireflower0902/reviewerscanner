@@ -1,6 +1,7 @@
 'use client';
 
 import { createDefaultFilters } from '../lib/defaults';
+import { PLATFORM_ICONS } from '../lib/platformIcons';
 
 import { useMemo } from 'react';
 import { Campaign } from '../types/campaign';
@@ -119,7 +120,7 @@ export default function SidebarFilter({
 
             {/* Sidebar Container */}
             <aside className={`
-        fixed top-0 left-0 bottom-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:self-start lg:h-screen lg:shadow-none lg:z-auto lg:w-72 lg:block border-r border-gray-200 overflow-y-auto
+        fixed top-0 left-0 bottom-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-var(--ad-bar-h,0px))] lg:shadow-none lg:z-auto lg:w-72 lg:block border-r border-gray-200 overflow-y-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
                 <div className="p-5 space-y-8">
@@ -171,6 +172,10 @@ export default function SidebarFilter({
                                         checked={filters.platforms.includes(platform)}
                                         onChange={() => togglePlatform(platform)}
                                     />
+                                    {PLATFORM_ICONS[platform] && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={PLATFORM_ICONS[platform]} alt="" width={20} height={20} className="w-5 h-5 rounded-[5px] object-contain shrink-0" />
+                                    )}
                                     <span className={`text-base ${filters.platforms.includes(platform) ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
                                         {platform}
                                     </span>

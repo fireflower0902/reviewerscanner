@@ -6,7 +6,8 @@ import { kstDaysPassed, shiftDday, normalizeDday, readJsonMaybeGzip } from '../l
 import { createDefaultFilters, DEFAULT_SORT, SortKey, Filters } from '../lib/defaults';
 import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
-import { Search, Filter, Menu } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
+import { useFilterDrawer } from './FilterDrawer';
 
 // 데이터 파일 주소: 운영은 Cloudflare Pages Function(/api/campaigns, R2에서 읽음),
 // 로컬 개발은 크롤러가 만든 public/campaigns.json
@@ -51,7 +52,7 @@ export default function CampaignList() {
     }, [reloadKey]);
 
     const [keyword, setKeyword] = useState('');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { open: isSidebarOpen, setOpen: setIsSidebarOpen } = useFilterDrawer();   // 모바일 필터 서랍 (제목 줄의 '필터' 버튼과 공유)
     const [isScrolled, setIsScrolled] = useState(false);
 
     // Complex Filter State
@@ -211,22 +212,9 @@ export default function CampaignList() {
 
             {/* Main Content */}
             <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0">
-                {/* Mobile Header - 필터 버튼만 상단 고정, 제목은 Hero 배너에서 표시 */}
-                <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-20">
-                    <div className="flex items-center justify-end px-4 py-2">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-medium shadow-sm transition-colors"
-                        >
-                            <Menu size={16} />
-                            필터
-                        </button>
-                    </div>
-                </div>
-
-                <div className="p-4 sm:p-6 lg:p-8">
+                <div className="p-4 pt-2 sm:p-6 lg:p-8 lg:pt-4">
                     {/* Search Bar */}
-                    <div className="max-w-4xl mx-auto mb-8">
+                    <div className="max-w-4xl mx-auto mb-4 sm:mb-8 lg:mb-4">
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search className="h-5 w-5 text-gray-400" />
@@ -245,7 +233,7 @@ export default function CampaignList() {
                     </div>
 
                     {/* Results Count & Active Filters Summary */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-3 gap-2 sm:mb-6 sm:gap-4">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">캠페인 리스트</h2>
                             <p className="text-sm text-gray-500 mt-1">

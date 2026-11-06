@@ -48,6 +48,8 @@ __pycache__/
 *.png
 !app/opengraph-image.png
 !app/icon.png
+!app/apple-icon.png
+!public/platform-icons/*.png
 debug_*.json
 public/campaigns.json
 revu_test_results.json
