@@ -33,5 +33,7 @@ export const CATEGORY_ALIAS: Record<string, string> = {
     '식품': '음식점',
     '여행': '여행/숙박',
     '숙박': '여행/숙박',
+    '문화': '문화/레저',
+    '레저': '문화/레저',
 };
 export const normalizeCategory = (category: string): string => CATEGORY_ALIAS[category] ?? category;
