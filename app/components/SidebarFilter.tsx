@@ -257,7 +257,7 @@ export default function SidebarFilter({
                                 <label className="block text-xs font-medium text-gray-500 mb-2">
                                     상세 지역 (다중 선택 가능)
                                 </label>
-                                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                                <div className="flex flex-wrap gap-2 p-1">
                                     {/* 전체 버튼 */}
                                     <button
                                         onClick={() => onFilterChange({ ...filters, cities: [] })}
