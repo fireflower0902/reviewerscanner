@@ -1,6 +1,7 @@
 'use client';
 
 import ChannelIcon from './ChannelIcon';
+import CategoryIcon from './CategoryIcon';
 import { createDefaultFilters } from '../lib/defaults';
 import { PLATFORM_ICONS } from '../lib/platformIcons';
 
@@ -218,12 +219,13 @@ export default function SidebarFilter({
                                     key={category}
                                     onClick={() => toggleCategory(category)}
                                     className={`
-                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
+                    inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all
                     ${(filters.categories || []).includes(category)
                                             ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
                                             : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
                   `}
                                 >
+                                    <CategoryIcon category={category} size={18} />
                                     {category}
                                 </button>
                             ))}

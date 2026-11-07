@@ -1,4 +1,5 @@
 import ChannelIcon from './ChannelIcon';
+import CategoryIcon from './CategoryIcon';
 import Image from 'next/image';
 import { Campaign } from '../types/campaign';
 import { Clock } from 'lucide-react';
@@ -50,7 +51,8 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
                         )}
                         {campaign.platform}
                     </span>
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-indigo-500 text-white shadow-sm leading-tight">
+                    <span className="inline-flex items-center gap-1 pl-1 pr-1.5 py-0.5 text-[10px] font-bold rounded-md bg-indigo-500 text-white shadow-sm leading-tight">
+                        <CategoryIcon category={campaign.category} size={13} />
                         {campaign.category}
                     </span>
                 </div>
