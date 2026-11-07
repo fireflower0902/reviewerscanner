@@ -57,9 +57,20 @@ export default function SidebarFilter({
             }
         });
 
+        // 정렬: 시/도는 '서울', '경기'를 맨 위에 두고 나머지는 가나다순. '기타'는 시/도·세부 지역 모두 맨 마지막.
+        const TOP_PROVINCES = ['서울', '경기'];
+        const rank = (name: string, top: string[] = []) => {
+            const i = top.indexOf(name);
+            if (i >= 0) return i;            // 서울(0), 경기(1)
+            if (name === '기타') return 1000; // 맨 뒤
+            return 100;                       // 나머지는 가나다순
+        };
+        const byName = (top: string[] = []) => (a: string, b: string) =>
+            rank(a, top) - rank(b, top) || a.localeCompare(b, 'ko');
+
         const sorted: Record<string, string[]> = {};
-        Object.keys(hierarchy).sort().forEach(p => {
-            sorted[p] = Array.from(hierarchy[p]).sort();
+        Object.keys(hierarchy).sort(byName(TOP_PROVINCES)).forEach(p => {
+            sorted[p] = Array.from(hierarchy[p]).sort(byName());
         });
 
         return sorted;
