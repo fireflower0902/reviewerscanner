@@ -57,7 +57,17 @@ async def crawl(context: BrowserContext) -> List[Dict]:
         else:
             await page.get_by_text("로그인", exact=True).click()
         await page.wait_for_timeout(4000)
-        print("[Revu] Login success")
+        # 로그인 성공 여부를 실제로 확인한다 (비밀번호 입력칸이 여전히 보이거나 /login 에 머물러 있으면 실패)
+        still_form = await page.locator('input[name="password"]').count() > 0
+        if still_form or "/login" in page.url:
+            err_txt = ""
+            try:
+                err_txt = (await page.locator('[class*="error"], [role="alert"], .toast').first.inner_text(timeout=2000))[:120]
+            except Exception:
+                pass
+            print(f"[Revu] ⚠ LOGIN FAILED (url={page.url}, message={err_txt!r}) — 로그아웃 상태로 계속 진행")
+        else:
+            print(f"[Revu] Login OK (url={page.url})")
     except Exception as e:
         print(f"[Revu] Login Error: {e}")
         await page.close()
@@ -79,6 +89,12 @@ async def crawl(context: BrowserContext) -> List[Dict]:
             try:
                 if response.ok:
                     data = await response.json()
+                    # 진단용: 어떤 주소로 몇 건씩 오는지 기록 (페이지네이션 방식 확인)
+                    try:
+                        print(f"[Revu][API] items={len(data.get('items', []))} keys={[k for k in data.keys() if k != 'items']} "
+                              f"meta={{k: data[k] for k in data if k != 'items' and not isinstance(data[k], (list, dict))}} url={response.url[-170:]}")
+                    except Exception:
+                        pass
                     if "items" in data and len(data["items"]) > 0:
                         for item in data["items"]:
                             try:
@@ -192,6 +208,7 @@ async def crawl(context: BrowserContext) -> List[Dict]:
 
             for r in results[start_count:]:
                 r["category"] = cat_name
+            print(f"[Revu] {cat_name}: +{len(results) - start_count}건")
 
         except Exception as e:
             print(f"[Revu] Navigation Error on {cat_name}: {e}")
