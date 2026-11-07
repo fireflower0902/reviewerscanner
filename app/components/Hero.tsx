@@ -1,17 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Share2 } from 'lucide-react';
 import { useFilterDrawer } from './FilterDrawer';
+import { useShare, ShareToast } from './ShareButton';
 
 /**
  * 상단 파란 제목 영역.
  *  - 모바일/태블릿(사이드바가 서랍인 화면): 맨 위에서는 제목 줄 오른쪽 끝에 하늘색 '필터' 버튼이 있다.
  *    스크롤을 내려 제목이 화면 밖으로 나가면, 하얀 바탕의 얇은 띠에 '필터' 버튼만 화면 위에 고정된다.
  *  - PC: 사이드바가 항상 보이므로 필터 버튼과 고정 띠가 없다.
+ *  - 제목 줄 오른쪽 끝에는 '공유' 버튼이 있다 (모바일은 기본 공유 창, PC는 링크 복사).
  */
 export default function Hero() {
     const { setOpen } = useFilterDrawer();
+    const { share, toast } = useShare();
     const topButtonRef = useRef<HTMLButtonElement>(null);
     const [scrolledPast, setScrolledPast] = useState(false);   // 제목 줄의 필터 버튼이 화면 위로 올라가 사라졌는가
 
@@ -56,13 +59,24 @@ export default function Hero() {
                         <Menu size={16} />
                         필터
                     </button>
+
+                    {/* 공유하기 — 제목 줄 오른쪽 끝 (PC·모바일 공통) */}
+                    <button
+                        type="button"
+                        onClick={share}
+                        aria-label="사이트 공유하기"
+                        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-lg text-sm font-bold shadow-md transition-colors"
+                    >
+                        <Share2 size={16} />
+                        공유
+                    </button>
                 </div>
             </div>
 
             {/* 스크롤 후: 하얀 바탕에 필터 버튼만 고정 (서랍 z-50·어두운 배경 z-40보다 아래) */}
             {scrolledPast && (
                 <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-                    <div className="flex items-center justify-start px-4 py-1.5">
+                    <div className="flex items-center justify-between px-4 py-1.5">
                         <button
                             type="button"
                             onClick={() => setOpen(true)}
@@ -71,9 +85,20 @@ export default function Hero() {
                             <Menu size={16} />
                             필터
                         </button>
+                        <button
+                            type="button"
+                            onClick={share}
+                            aria-label="사이트 공유하기"
+                            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-lg text-sm font-bold transition-colors"
+                        >
+                            <Share2 size={16} />
+                            공유
+                        </button>
                     </div>
                 </div>
             )}
+
+            <ShareToast message={toast} />
         </>
     );
 }
