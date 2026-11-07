@@ -23,22 +23,6 @@ const InstallGuideContext = createContext<InstallGuideContextValue>({ openGuide:
 
 export const useInstallGuide = () => useContext(InstallGuideContext);
 
-/** PC용: 검색창 아래의 작은 '앱처럼 설치하기' 링크 */
-export function InstallLink() {
-    const { requestInstall, installed } = useInstallGuide();
-    if (installed) return null;
-    return (
-        <button
-            type="button"
-            onClick={requestInstall}
-            className="inline-flex items-center gap-1 px-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
-        >
-            <Download size={13} />
-            앱처럼 설치하기 (홈 화면에 추가)
-        </button>
-    );
-}
-
 /**
  * "앱처럼 설치하기" 안내 (PWA).
  *  - 이미 설치해서 앱으로 열었으면 아무것도 보이지 않는다.
