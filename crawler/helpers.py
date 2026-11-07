@@ -109,3 +109,45 @@ def shift_dday(dday: str, days_passed: int):
     if "오늘" in dday:  # '오늘까지', '오늘마감' — 하루라도 지나면 마감
         return None
     return dday
+
+
+# ---------------------------------------------------------------------------
+# 지하철·철도역 이름 → 지역 (서울·경기). 지역 글자가 "사당역" 처럼 역 이름뿐일 때 쓴다.
+# 데이터: crawler/data/capital_stations.json (OpenStreetMap 기반, tools/build_capital_stations.py 로 생성)
+# ---------------------------------------------------------------------------
+import json as _json
+import os as _os
+
+_STATION_PROVINCES = ("서울", "경기")      # 요청 범위: 서울·경기 (인천 등은 '기타'로 둔다)
+_stations_cache = None
+
+
+def _stations():
+    global _stations_cache
+    if _stations_cache is None:
+        path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "data", "capital_stations.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                _stations_cache = _json.load(f)
+        except Exception:
+            _stations_cache = {}
+    return _stations_cache
+
+
+def region_from_station(text: str, province_hint: str = ""):
+    """'사당역', '릴스 구파발역', '고속터미널역(3,7,9호선)' 같은 글자에서 역 이름을 찾아 (시/도, 시/군/구) 를 돌려준다.
+    province_hint 가 있으면 같은 시/도의 역만 인정한다. 못 찾으면 None."""
+    table = _stations()
+    if not table or not text:
+        return None
+    cleaned = re.sub(r"\(.*?\)", " ", text)                 # 괄호 안(노선 안내 등)은 버린다
+    for token in re.split(r"[\s/·,]+", cleaned):
+        if not token.endswith("역"):                          # '서울 신당동' 의 '서울' 이 서울역으로 오인되지 않게: 반드시 '…역' 형태만
+            continue
+        hit = table.get(token[:-1].strip())
+        if not hit or hit[0] not in _STATION_PROVINCES:
+            continue
+        if province_hint and hit[0] != province_hint:
+            continue
+        return hit[0], hit[1]
+    return None

@@ -9,6 +9,7 @@ export const PLATFORM_ICONS: Record<string, string> = {
     '서울오빠': '/platform-icons/seouloppa.png',
     '오마이블로그': '/platform-icons/ohmyblog.png',
     '포블로그': '/platform-icons/fourblog.png',
+    '미블': '/platform-icons/mrblog.png',
 };
 
 // 카드 사진 위 플랫폼 배지 색. 각 사이트 아이콘의 대표색을 따라 사이트끼리 구분되게 한다. (bg, text 는 Tailwind 클래스)
@@ -22,5 +23,6 @@ export const PLATFORM_BADGE: Record<string, string> = {
     '서울오빠': 'bg-[#5b93ff] text-white',
     '오마이블로그': 'bg-[#5a69ae] text-white',
     '포블로그': 'bg-[#a78bda] text-white',
+    '미블': 'bg-[#111827] text-white',          // 브랜드가 흑백이라 진한 차콜
 };
 export const PLATFORM_BADGE_FALLBACK = 'bg-gray-500 text-white';

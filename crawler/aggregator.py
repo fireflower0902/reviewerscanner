@@ -23,7 +23,7 @@ CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "900"))   # 사이트당
 MIN_ITEMS_TO_UPLOAD = int(os.environ.get("MIN_ITEMS_TO_UPLOAD", "5000"))
 
 # 한국 IP 기기가 별도로 수집해서 R2에 올리는 사이트(부분 파일 이름)
-LOCAL_PARTS = ["kangnam", "fourblog"]
+LOCAL_PARTS = ["kangnam", "fourblog", "mrblog"]
 
 _CRAWLERS = [
     ("리뷰플레이스", reviewplace.run),

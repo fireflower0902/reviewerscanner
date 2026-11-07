@@ -429,3 +429,20 @@ GitHub 로그는 저장소 관리자 인증이 필요해 직접 읽을 수 없�
 **리뷰플레이스**: 2026-11-07 오전부터 사이트 전체가 "서비스 점검 안내"(HTTP 503)라 수집 0건 → 직전 데이터 354건 유지. 점검이 끝나면 자동 복구(확인 필요).
 
 **크롤러 시간 제한**: 사이트당 제한을 600초 → 900초(15분)로 늘림(`CRAWLER_TIMEOUT`, 환경변수로 조정 가능). 레뷰 내부 예산도 820초로 맞춤. 워크플로 전체 제한은 30분 그대로.
+
+---
+
+## 24. 지도 기능 준비(위치 정보) · 미블 추가 (2026-11-07)
+
+**위치 정보 조사 (지도 기능 검토)** — 수집 데이터에는 원래 주소·좌표가 없었음(시/도·시/군/구만).
+- 레뷰: 목록 API(`/v1/campaigns`)의 `venue` 에 `lat/lng/addressFirst/addressLast/nameKey` 가 이미 있음(방문형의 약 95%). → `crawlers/revu.py` 가 `location: {lat,lng,address,name}` 로 저장(추가 요청 없음). 운영 확인: 3,128건 중 2,978건.
+- 서울오빠: `https://www.seoulouba.co.kr/map`(내주변검색) HTML 한 장에 `var js_obj=[{cam_idx, cam_latitude, cam_longitude, …}]` 로 진행 중 1,182건 좌표가 통째로 들어 있음(우리 진행 중 항목의 86% 일치). — 아직 수집 코드에 연결 안 함.
+- 강남맛집·놀러와·디너의여왕·포블로그: 상세 페이지 HTML 에 캠페인별 좌표가 있음(일반 HTTP 요청으로 가능, 요청당 0.1~0.8초). 목록·지도 전용 API 는 없음. 오마이블로그: 상세 JSON API(`/api/web/campaign/detail?app_seq=`)에 주소 문장(좌표 없음, 변환 필요). 리뷰노트: 위치 정보 없음(상세는 SNS 로그인 필요). 리뷰플레이스: 점검 중이라 확인 못 함.
+- 약관: 카카오 지도·로컬 API 는 "응답 결과를 저장해서 쓰는 것 불허" 안내(공식 FAQ 글) — 주소를 카카오로 변환해 저장하는 방식은 피하고, 사이트가 준 좌표를 쓰거나 지도 화면에서 실시간 변환한다. (광고 수익 서비스 허용 여부는 미확인)
+
+**미블(mrblog.net) 추가** — 로그인 필수(네이버 로그인 캡차 → 서버 자동 로그인 불가). 
+- 사람이 한 번 로그인해 둔 브라우저 프로필 재사용: `scripts/mac/mrblog_login.py` (프로필 `~/.reviewerscanner/profiles/mrblog`, 권한 700, git 에 올리지 않음). `--check` 로 유효성 확인. 쿠키: Laravel 계열 — `remember_web_*` 400일, 세션 쿠키 2시간(remember 로 자동 갱신). 미블 **로그아웃**하면 remember 토큰이 무효화될 수 있으니 하지 말 것.
+- 크롤러 `crawlers/mrblog.py`: 로그인된 페이지 안에서 `GET /xhr/campaigns?type=region&page=N&category=<이름>`(CSRF 토큰 헤더 필요, 24개/페이지, 약 4초/요청). 카테고리별 목록(맛집·식품·뷰티·패션·생활·여행/체험·취미/레저)으로 분류, 카테고리 미지정 항목은 전체 목록에서 보충해 키워드 분류. 배송 캠페인(지역 '배송') 제외. 약 2,000건, 7분.
+- 수집은 별도 launchd 작업(`com.reviewerscanner.mrblog`, 1시간마다): `scripts/mac/install_mrblog_job.sh` → `crawler/run_mrblog.py` → R2 `v1/parts/mrblog.json.gz`. 실패·로그인 만료 시 업로드하지 않고(직전 부분 파일 36시간 유지) macOS 알림(하루 1회).
+- 지역이 역 이름뿐인 경우("사당역") 서울·경기 역 표(`crawler/data/capital_stations.json`, OpenStreetMap © contributors ODbL, `crawler/tools/build_capital_stations.py` 로 생성)로 시/군/구를 보정(`helpers.region_from_station`). 그 외는 '기타'.
+- 사이트: 플랫폼 아이콘 `public/platform-icons/mrblog.png`(미블 파비콘), 배지 색 진한 차콜.
