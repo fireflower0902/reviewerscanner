@@ -89,10 +89,15 @@ async def crawl(context: BrowserContext) -> List[Dict]:
             try:
                 if response.ok:
                     data = await response.json()
-                    # 진단용: 어떤 주소로 몇 건씩 오는지 기록 (페이지네이션 방식 확인)
+                    # 진단용: 응답마다 total/page 와 수집 대상(방문형·지역 있음) 개수를 기록
                     try:
-                        print(f"[Revu][API] items={len(data.get('items', []))} keys={[k for k in data.keys() if k != 'items']} "
-                              f"meta={{k: data[k] for k in data if k != 'items' and not isinstance(data[k], (list, dict))}} url={response.url[-170:]}")
+                        _items = data.get("items", [])
+                        _meta = {k: data[k] for k in data if k != "items" and not isinstance(data[k], (list, dict))}
+                        _keep = sum(1 for it in _items
+                                    if "방문형" in (it.get("category") or [])
+                                    or (bool(it.get("sido")) and it.get("sido") not in ["재택", "배송", "배송형"]))
+                        _cat = re.search(r"category=([^&]+)", response.url)
+                        print(f"[Revu][API] cat={_cat.group(1) if _cat else '?'} meta={_meta} items={len(_items)} 수집대상={_keep}")
                     except Exception:
                         pass
                     if "items" in data and len(data["items"]) > 0:
