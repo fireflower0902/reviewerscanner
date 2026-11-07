@@ -1,4 +1,6 @@
 import re
+import math
+import time
 import sys
 import os
 from datetime import datetime, timezone, timedelta
@@ -11,6 +13,9 @@ from region_mapper import RegionMapper
 
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 _KST = timezone(timedelta(hours=9))
+
+CATEGORY_BUDGET_SEC = 300     # 카테고리 하나에 쓸 수 있는 최대 시간
+TOTAL_BUDGET_SEC = 520        # 레뷰 전체 예산 (크롤러 제한 600초보다 짧게 — 넘으면 지금까지 받은 것만 반환)
 
 _CH_MAP = {
     "blog": "네이버 블로그",
@@ -83,12 +88,20 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     except Exception as e:
         print(f"[Revu] Click '지역' Error: {e}")
 
+    # 카테고리별 진행 상태: API 가 알려 주는 전체 개수(total)와 지금까지 받은 페이지 번호
+    page_state = {"total": None, "limit": 30, "pages": set()}
+
     # 2. 응답 인터셉터
     async def handle_response(response):
         if "api.weble.net/v1/campaigns" in response.url and response.request.method == "GET":
             try:
                 if response.ok:
                     data = await response.json()
+                    if isinstance(data, dict) and "total" in data:
+                        page_state["total"] = data.get("total")
+                        page_state["limit"] = data.get("limit") or 30
+                        if data.get("page") is not None:
+                            page_state["pages"].add(data.get("page"))
                     # 진단용: 응답마다 total/page 와 수집 대상(방문형·지역 있음) 개수를 기록
                     try:
                         _items = data.get("items", [])
@@ -186,8 +199,10 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     page.on("response", handle_response)
 
     # 3. 카테고리 순회 + 동적 스크롤
+    overall_deadline = time.monotonic() + TOTAL_BUDGET_SEC
     for cat_name, revu_path in _REVU_URL_MAP.items():
         print(f"[Revu] Crawling {cat_name} ({revu_path})...")
+        page_state.update({"total": None, "limit": 30, "pages": set()})
         try:
             start_count = len(results)
             try:
@@ -196,20 +211,28 @@ async def crawl(context: BrowserContext) -> List[Dict]:
             except Exception as e:
                 print(f"[Revu] Goto ({revu_path}) Exception: {e}")
 
-            prev_height = await page.evaluate("document.body.scrollHeight")
-            no_change = 0
-            for _ in range(150):
-                await page.mouse.wheel(delta_x=0, delta_y=800)
-                await page.wait_for_timeout(1500)
-                new_height = await page.evaluate("document.body.scrollHeight")
-                if new_height == prev_height:
-                    no_change += 1
-                    if no_change >= 3:
-                        print(f"[Revu] Reached bottom for {revu_path}")
+            # 끝까지 내려가기: 화면 높이가 아니라 "API 가 알려 준 전체 페이지 수를 다 받았는지"로 판단한다.
+            # 새 페이지가 안 오면(느린 응답) 몇 번 더 기다린 뒤 멈춘다.
+            stall = 0
+            cat_deadline = time.monotonic() + CATEGORY_BUDGET_SEC
+            while time.monotonic() < cat_deadline and time.monotonic() < overall_deadline:
+                before = len(page_state["pages"])
+                total = page_state["total"]
+                if total is not None and before >= math.ceil(total / page_state["limit"]):
+                    print(f"[Revu] {cat_name}: 전체 {total}건 / {before}페이지 모두 수신")
+                    break
+                await page.mouse.wheel(delta_x=0, delta_y=2500)
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                for _ in range(16):    # 새 페이지 응답을 최대 8초 기다림
+                    await page.wait_for_timeout(500)
+                    if len(page_state["pages"]) > before:
                         break
-                else:
-                    no_change = 0
-                    prev_height = new_height
+                stall = 0 if len(page_state["pages"]) > before else stall + 1
+                if stall >= 5:
+                    print(f"[Revu] {cat_name}: 새 페이지가 오지 않아 중단 (받은 페이지 {before}, 전체 {total}건)")
+                    break
+            else:
+                print(f"[Revu] {cat_name}: 시간 제한으로 중단 (받은 페이지 {len(page_state['pages'])}, 전체 {page_state['total']}건)")
 
             for r in results[start_count:]:
                 r["category"] = cat_name
