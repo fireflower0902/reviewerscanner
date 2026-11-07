@@ -35,6 +35,26 @@ _REVU_URL_MAP = {
 }
 
 
+def _venue_location(venue):
+    """레뷰 venue 정보를 {lat, lng, address, name} 으로 변환. 좌표가 없거나 한국 범위를 벗어나면 None"""
+    if not isinstance(venue, dict):
+        return None
+    try:
+        lat = float(venue.get("lat"))
+        lng = float(venue.get("lng"))
+    except (TypeError, ValueError):
+        return None
+    if not (33.0 <= lat <= 39.5 and 124.0 <= lng <= 132.0):
+        return None
+    address = " ".join(x for x in [(venue.get("addressFirst") or "").strip(), (venue.get("addressLast") or "").strip()] if x)
+    return {
+        "lat": round(lat, 6),
+        "lng": round(lng, 6),
+        "address": address,
+        "name": (venue.get("name") or venue.get("nameKey") or "").strip(),
+    }
+
+
 async def crawl(context: BrowserContext) -> List[Dict]:
     """레뷰 크롤링 (로그인 + response 인터셉터 + 동적 스크롤)"""
     print("[Revu] Starting crawl...")
@@ -189,6 +209,11 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                                     "image_url": str(thumb),
                                     "stats": {"applicants": int(applicants), "quota": int(quota)}
                                 }
+                                # 가게 위치: 목록 응답의 venue 에 주소·좌표가 이미 들어 있다 (추가 요청 불필요)
+                                location = _venue_location(item.get("venue"))
+                                if location:
+                                    res["location"] = location
+
                                 if not any(r['url'] == res['url'] for r in results):
                                     results.append(res)
                             except Exception as parse_e:
@@ -221,6 +246,10 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                 if total is not None and before >= math.ceil(total / page_state["limit"]):
                     print(f"[Revu] {cat_name}: 전체 {total}건 / {before}페이지 모두 수신")
                     break
+                if stall >= 1:
+                    # 새 페이지가 안 오면 스크롤을 위로 조금 올렸다 다시 내려 '무한 스크롤' 감지를 다시 건다
+                    await page.evaluate("window.scrollBy(0, -900)")
+                    await page.wait_for_timeout(600)
                 await page.mouse.wheel(delta_x=0, delta_y=2500)
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                 for _ in range(16):    # 새 페이지 응답을 최대 8초 기다림
@@ -228,7 +257,7 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                     if len(page_state["pages"]) > before:
                         break
                 stall = 0 if len(page_state["pages"]) > before else stall + 1
-                if stall >= 5:
+                if stall >= 6:
                     print(f"[Revu] {cat_name}: 새 페이지가 오지 않아 중단 (받은 페이지 {before}, 전체 {total}건)")
                     break
             else:

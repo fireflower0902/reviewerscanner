@@ -14,6 +14,13 @@ export interface Meta {
     dday: string;
 }
 
+export interface Location {
+    lat: number;
+    lng: number;
+    address?: string;
+    name?: string;
+}
+
 export interface Campaign {
     platform: string;
     title: string;
@@ -23,6 +30,7 @@ export interface Campaign {
     reward: Reward;
     meta: Meta;
     image_url: string;
+    location?: Location;   // 가게 위치(지도용). 사이트가 좌표를 제공하는 경우에만 있음
     stats?: {
         applicants: number;
         quota: number;
