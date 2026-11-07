@@ -1,3 +1,4 @@
+import asyncio
 import re
 import sys
 import os
@@ -14,6 +15,8 @@ _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
 
 BASE = "https://www.seoulouba.co.kr"
 MAX_MORE_PAGES = 60          # "더보기" 요청 상한 (정상은 카테고리당 10회 안팎)
+CRAWL_BUDGET_SEC = 420       # 서울오빠 전체 제한 시간 (정상은 30~50초). 넘으면 실패로 처리
+CLOSE_TIMEOUT_SEC = 15       # 접속이 끊긴 뒤 브라우저/페이지를 닫다가 멈추지 않도록
 
 # "더보기" 버튼이 호출하는 주소: 36개씩 이어서 내려준다 (첫 화면은 192개만 보여줌)
 _MORE_JS = """async ([cat, page, more]) => {
@@ -112,6 +115,7 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                 print(f"[SeoulOppa] Item Parse Error: {e}")
         return active
 
+    failed_categories = []
     try:
         for cat_code, mapped_category in SEOULOPPA_CATEGORY_MAP.items():
             print(f"[SeoulOppa] Crawling {mapped_category} (cat: {cat_code})...")
@@ -140,12 +144,23 @@ async def crawl(context: BrowserContext) -> List[Dict]:
                 print(f"[SeoulOppa] {mapped_category}: 화면 {len(first_items)}개 + 더보기 {more_pages}회 → 누적 {len(results)}건")
             except Exception as inner_e:
                 print(f"[SeoulOppa] Category {cat_code} Crawl Error: {inner_e}")
+                failed_categories.append(cat_code)
+                # 첫 카테고리부터 접속이 안 되면 이 네트워크에서는 막힌 것 → 남은 카테고리를 기다리지 않고 바로 포기
+                if not results:
+                    break
                 continue
 
     except Exception as e:
         print(f"[SeoulOppa] Error: {e}")
     finally:
-        await page.close()
+        try:
+            await asyncio.wait_for(page.close(), CLOSE_TIMEOUT_SEC)
+        except Exception:
+            pass
+
+    if failed_categories:
+        # 일부 카테고리만 받은 결과로 덮어쓰면 목록이 줄어든다 → 실패로 알려 직전 데이터를 유지하게 한다
+        raise RuntimeError(f"서울오빠 카테고리 {failed_categories} 수집 실패 — 이번 결과는 사용하지 않습니다")
 
     print(f"[SeoulOppa] Collected {len(results)} items")
     return results
@@ -156,6 +171,9 @@ async def run() -> List[Dict]:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(user_agent=_UA)
         try:
-            return await crawl(context)
+            return await asyncio.wait_for(crawl(context), CRAWL_BUDGET_SEC)
         finally:
-            await browser.close()
+            try:
+                await asyncio.wait_for(browser.close(), CLOSE_TIMEOUT_SEC)
+            except Exception:
+                pass

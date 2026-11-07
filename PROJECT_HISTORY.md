@@ -446,3 +446,5 @@ GitHub 로그는 저장소 관리자 인증이 필요해 직접 읽을 수 없�
 - 수집은 별도 launchd 작업(`com.reviewerscanner.mrblog`, 1시간마다): `scripts/mac/install_mrblog_job.sh` → `crawler/run_mrblog.py` → R2 `v1/parts/mrblog.json.gz`. 실패·로그인 만료 시 업로드하지 않고(직전 부분 파일 36시간 유지) macOS 알림(하루 1회).
 - 지역이 역 이름뿐인 경우("사당역") 서울·경기 역 표(`crawler/data/capital_stations.json`, OpenStreetMap © contributors ODbL, `crawler/tools/build_capital_stations.py` 로 생성)로 시/군/구를 보정(`helpers.region_from_station`). 그 외는 '기타'.
 - 사이트: 플랫폼 아이콘 `public/platform-icons/mrblog.png`(미블 파비콘), 배지 색 진한 차콜.
+
+**서울오빠 간헐적 접속 실패(GitHub 서버)**: 최근 실행의 약 절반에서 `ERR_CONNECTION_TIMED_OUT`(0건 또는 900초 시간 초과). 접속 실패 후 브라우저 종료 단계에서 멈춰 900초를 쓰는 문제를 수정: 첫 카테고리부터 접속 실패면 즉시 포기(예외 → 직전 데이터 유지), 일부 카테고리만 받은 결과는 쓰지 않음, 종료 대기 15초·전체 420초 제한. 정상일 때는 11~50초.
