@@ -2,10 +2,12 @@ import CampaignList from './components/CampaignList';
 import AdBar from './components/AdBar';
 import Hero from './components/Hero';
 import { FilterDrawerProvider } from './components/FilterDrawer';
+import InstallGuideProvider from './components/InstallGuide';
 
 export default function Home() {
   return (
     <FilterDrawerProvider>
+    <InstallGuideProvider>
     <main className="min-h-screen bg-gray-50">
       {/* Hero Section (모바일에서는 오른쪽 끝에 필터 버튼) */}
       <Hero />
@@ -18,6 +20,7 @@ export default function Home() {
       {/* 하단 고정 광고 띠 (종류는 app/lib/adConfig.ts) */}
       <AdBar />
     </main>
+    </InstallGuideProvider>
     </FilterDrawerProvider>
   );
 }

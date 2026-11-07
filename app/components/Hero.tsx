@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Menu, Share2 } from 'lucide-react';
 import { useFilterDrawer } from './FilterDrawer';
 import { useShare, ShareToast } from './ShareButton';
+import OverflowMenu from './OverflowMenu';
 
 /**
  * 상단 파란 제목 영역.
@@ -60,12 +61,13 @@ export default function Hero() {
                         필터
                     </button>
 
-                    {/* 공유하기 — 제목 줄 오른쪽 끝 (PC·모바일 공통) */}
+                    {/* 공유하기 — PC: 제목 줄 오른쪽 끝의 '공유' 버튼 / 모바일: 오른쪽 위 ⋮ 메뉴(공유하기·홈 화면에 설치) */}
+                    <OverflowMenu variant="hero" onShare={share} />
                     <button
                         type="button"
                         onClick={share}
                         aria-label="사이트 공유하기"
-                        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-lg text-sm font-bold shadow-md transition-colors"
+                        className="hidden lg:flex absolute right-0 top-0 z-10 items-center gap-1.5 px-3 py-1.5 bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-lg text-sm font-bold shadow-md transition-colors"
                     >
                         <Share2 size={16} />
                         공유
@@ -85,15 +87,7 @@ export default function Hero() {
                             <Menu size={16} />
                             필터
                         </button>
-                        <button
-                            type="button"
-                            onClick={share}
-                            aria-label="사이트 공유하기"
-                            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-lg text-sm font-bold transition-colors"
-                        >
-                            <Share2 size={16} />
-                            공유
-                        </button>
+                        <OverflowMenu variant="bar" onShare={share} />
                     </div>
                 </div>
             )}

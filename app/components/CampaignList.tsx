@@ -8,6 +8,7 @@ import CampaignCard from './CampaignCard';
 import SidebarFilter from './SidebarFilter';
 import { Search, Filter, X } from 'lucide-react';
 import { useFilterDrawer } from './FilterDrawer';
+import { InstallLink } from './InstallGuide';
 
 // 데이터 파일 주소: 운영은 Cloudflare Pages Function(/api/campaigns, R2에서 읽음),
 // 로컬 개발은 크롤러가 만든 public/campaigns.json
@@ -305,6 +306,10 @@ export default function CampaignList() {
                         <p className="mt-2 px-1 text-xs text-gray-500">
                             💡 키워드를 입력하고 스페이스바/엔터를 누르세요. 여러 키워드를 입력하면 <b>모든 키워드를 포함</b>한 캠페인만 보여줍니다.
                         </p>
+                        {/* PC 전용 (모바일은 오른쪽 위 ⋮ 메뉴의 '홈 화면에 설치') */}
+                        <div className="mt-1 hidden lg:block">
+                            <InstallLink />
+                        </div>
                     </div>
 
                     {/* Results Count & Active Filters Summary */}

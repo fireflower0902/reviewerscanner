@@ -50,6 +50,7 @@ __pycache__/
 !app/icon.png
 !app/apple-icon.png
 !public/platform-icons/*.png
+!public/pwa/*.png
 debug_*.json
 public/campaigns.json
 revu_test_results.json

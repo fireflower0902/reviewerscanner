@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,7 +12,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// 폰 브라우저 위쪽 줄 색(앱으로 설치했을 때 상태바 색도 이 색을 따른다)
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+};
+
 export const metadata: Metadata = {
+  // 홈 화면에 앱처럼 설치(PWA) — 이름·아이콘·전체 화면 실행 정보
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "체험단 스캐너", statusBarStyle: "default" },
   // og:image 등 상대 경로를 절대 주소로 바꾸는 기준 (미설정 시 http://localhost:3000 으로 만들어져 카카오·SNS 미리보기 이미지가 안 뜬다)
   metadataBase: new URL("https://scan.reviewerscanner.com"),
   // 구글 서치콘솔 소유확인
