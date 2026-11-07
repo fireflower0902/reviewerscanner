@@ -14,8 +14,8 @@ from region_mapper import RegionMapper
 _UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 _KST = timezone(timedelta(hours=9))
 
-CATEGORY_BUDGET_SEC = 300     # 카테고리 하나에 쓸 수 있는 최대 시간
-TOTAL_BUDGET_SEC = 520        # 레뷰 전체 예산 (크롤러 제한 600초보다 짧게 — 넘으면 지금까지 받은 것만 반환)
+CATEGORY_BUDGET_SEC = 480     # 카테고리 하나에 쓸 수 있는 최대 시간
+TOTAL_BUDGET_SEC = 820        # 레뷰 전체 예산 (크롤러 제한 900초보다 짧게 — 넘으면 지금까지 받은 것만 반환)
 
 _CH_MAP = {
     "blog": "네이버 블로그",

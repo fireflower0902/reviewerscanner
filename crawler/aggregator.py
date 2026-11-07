@@ -19,7 +19,7 @@ from crawlers import reviewplace, reviewnote, dinnerqueen
 from crawlers import seouloppa, cometoplay, revu, ohmyblog
 
 # 크롤러 하나가 이 시간(초) 넘게 응답하지 않으면 그 사이트만 포기하고 나머지는 계속 진행한다
-CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "600"))   # 정상은 사이트당 최대 5분 안팎
+CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "900"))   # 사이트당 최대 15분 (정상은 5분 안팎, 레뷰·리뷰노트가 가장 오래 걸림)
 MIN_ITEMS_TO_UPLOAD = int(os.environ.get("MIN_ITEMS_TO_UPLOAD", "5000"))
 
 # 한국 IP 기기가 별도로 수집해서 R2에 올리는 사이트(부분 파일 이름)
