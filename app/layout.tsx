@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     google: "PbDI8GCtHYZOMoNM8bIAxJeETS37i6kP3Bfg0dfXbeU",
     other: { "naver-site-verification": "3f97fad74b095247217575e51805cf3010abb016" },
   },
-  title: "체험단 스캐너(리뷰어스캐너) | 블로그 체험단 사이트 모음",
+  title: "체험단 스캐너 | 블로그 체험단 사이트 모음",
   description: "블로그 체험단 사이트 모음, 체험단 스캐너. 강남맛집·레뷰·리뷰노트 등 9개 체험단 캠페인을 지역별·보상별로 한눈에 찾아보세요.",
   openGraph: {
     title: "체험단 스캐너 | 블로그 체험단 사이트 모음",
