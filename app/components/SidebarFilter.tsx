@@ -197,41 +197,6 @@ export default function SidebarFilter({
                         </div>
                     </div>
 
-                    {/* Section: Category */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                            카테고리
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                            <button
-                                onClick={() => onFilterChange({ ...filters, categories: [] })}
-                                className={`
-                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
-                    ${(!filters.categories || filters.categories.length === 0)
-                                        ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
-                  `}
-                            >
-                                전체
-                            </button>
-                            {categories.map(category => (
-                                <button
-                                    key={category}
-                                    onClick={() => toggleCategory(category)}
-                                    className={`
-                    inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all
-                    ${(filters.categories || []).includes(category)
-                                            ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
-                  `}
-                                >
-                                    <CategoryIcon category={category} size={18} />
-                                    {category}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Section: Region */}
                     <div>
                         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
@@ -289,6 +254,41 @@ export default function SidebarFilter({
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Section: Category */}
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                            카테고리
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => onFilterChange({ ...filters, categories: [] })}
+                                className={`
+                    px-3.5 py-2 rounded-lg text-sm font-medium border transition-all
+                    ${(!filters.categories || filters.categories.length === 0)
+                                        ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
+                  `}
+                            >
+                                전체
+                            </button>
+                            {categories.map(category => (
+                                <button
+                                    key={category}
+                                    onClick={() => toggleCategory(category)}
+                                    className={`
+                    inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all
+                    ${(filters.categories || []).includes(category)
+                                            ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-200'
+                                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}
+                  `}
+                                >
+                                    <CategoryIcon category={category} size={18} />
+                                    {category}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Section: Channel */}
