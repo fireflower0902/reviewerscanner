@@ -36,26 +36,30 @@ export default function Hero() {
     return (
         <>
             <div
-                className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 overflow-visible flex flex-col items-center justify-center pt-2 pb-2 md:pt-4 md:pb-0"
+                className="bg-white text-gray-900 border-b border-gray-200 px-4 overflow-visible flex flex-col items-stretch justify-center py-2.5 lg:px-6 lg:py-3"
             >
                 {/* 제목 줄만 기준점(relative)으로 삼아 필터 버튼을 왼쪽 끝에 둔다 */}
                 <div className="relative w-full">
-                    <div className="max-w-7xl mx-auto text-center">
-                        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 md:mb-2">
-                            체험단 스캐너
-                        </h1>
-                        {/* 모바일에서는 설명 문구 숨김 */}
-                        <p className="hidden md:block text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
-                            블로그 체험단 사이트 모음, 체험단 스캐너. 지역·보상별로 한눈에 찾아보세요.
-                        </p>
+                    <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 lg:mx-0 lg:justify-start lg:gap-3">
+                        {/* PC 전용: 곰돋보기 마스코트 아이콘 */}
+                        <img src="/mascot/bear-lens.svg" alt="" width={44} height={44} className="h-9 w-9 shrink-0 rounded-lg lg:h-11 lg:w-11 lg:rounded-xl" />
+                        <div>
+                            <h1 className="text-xl font-extrabold tracking-tight lg:text-2xl">
+                                체험단 스캐너
+                            </h1>
+                            {/* 화면에는 보이지 않지만(스크린리더용) 소개 문구는 유지 */}
+                            <p className="sr-only">
+                                블로그 체험단 사이트 모음, 체험단 스캐너. 지역·보상별로 한눈에 찾아보세요.
+                            </p>
+                        </div>
                     </div>
 
-                    {/* 맨 위에서의 필터 버튼 — 파란 배경 위의 반투명 유리 느낌 */}
+                    {/* 맨 위에서의 필터 버튼 — 하얀 바 위의 파란 버튼 */}
                     <button
                         ref={topButtonRef}
                         type="button"
                         onClick={() => setOpen(true)}
-                        className="lg:hidden absolute left-0 top-0 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-lg text-sm font-bold shadow-md transition-colors"
+                        className="lg:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 rounded-lg text-sm font-bold shadow-sm transition-colors"
                     >
                         <Menu size={16} />
                         필터
@@ -67,7 +71,7 @@ export default function Hero() {
                         type="button"
                         onClick={share}
                         aria-label="사이트 공유하기"
-                        className="hidden lg:flex absolute right-0 top-0 z-10 items-center gap-1.5 px-3 py-1.5 bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-lg text-sm font-bold shadow-md transition-colors"
+                        className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 rounded-lg text-sm font-bold transition-colors"
                     >
                         <Share2 size={16} />
                         공유

@@ -36,14 +36,12 @@ export default function OverflowMenu({
     }, [open]);
 
     const buttonClass =
-        variant === 'hero'
-            ? 'bg-white/20 text-white border border-white/50 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm shadow-md'
-            : 'border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100';
+        'border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100';
 
     const run = (fn: () => void) => () => { setOpen(false); fn(); };
 
     return (
-        <div ref={wrapRef} className={variant === 'hero' ? 'lg:hidden absolute right-0 top-0 z-20' : 'lg:hidden relative'}>
+        <div ref={wrapRef} className={variant === 'hero' ? 'lg:hidden absolute right-0 top-1/2 -translate-y-1/2 z-20' : 'lg:hidden relative'}>
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
