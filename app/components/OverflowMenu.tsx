@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Share2, Download } from 'lucide-react';
+import { MoreVertical, Share2, Download, BookOpen, FileText } from 'lucide-react';
 import { useInstallGuide } from './InstallGuide';
+import { useInfoModal } from './InfoModal';
 
 /**
  * 모바일 오른쪽 위 점 세 개(⋮) 메뉴: [공유하기] [홈 화면에 설치]
@@ -19,6 +20,7 @@ export default function OverflowMenu({
     const [open, setOpen] = useState(false);
     const wrapRef = useRef<HTMLDivElement>(null);
     const { requestInstall, installed } = useInstallGuide();
+    const { open: openInfo } = useInfoModal();
 
     // 바깥을 누르거나 Esc 를 누르면 닫기
     useEffect(() => {
@@ -78,6 +80,24 @@ export default function OverflowMenu({
                             홈 화면에 설치
                         </button>
                     )}
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={run(() => openInfo('guide'))}
+                        className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium hover:bg-gray-50 active:bg-gray-100"
+                    >
+                        <BookOpen size={16} className="text-blue-600" />
+                        이용가이드
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={run(() => openInfo('terms'))}
+                        className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium hover:bg-gray-50 active:bg-gray-100"
+                    >
+                        <FileText size={16} className="text-blue-600" />
+                        이용약관
+                    </button>
                 </div>
             )}
         </div>

@@ -5,6 +5,7 @@ import { Menu, Share2 } from 'lucide-react';
 import { useFilterDrawer } from './FilterDrawer';
 import { useShare, ShareToast } from './ShareButton';
 import OverflowMenu from './OverflowMenu';
+import { useInfoModal } from './InfoModal';
 
 /**
  * 상단 파란 제목 영역.
@@ -16,6 +17,7 @@ import OverflowMenu from './OverflowMenu';
 export default function Hero() {
     const { setOpen } = useFilterDrawer();
     const { share, toast } = useShare();
+    const { open: openInfo } = useInfoModal();
     const topButtonRef = useRef<HTMLButtonElement>(null);
     const [scrolledPast, setScrolledPast] = useState(false);   // 제목 줄의 필터 버튼이 화면 위로 올라가 사라졌는가
 
@@ -41,17 +43,22 @@ export default function Hero() {
                 {/* 제목 줄만 기준점(relative)으로 삼아 필터 버튼을 왼쪽 끝에 둔다 */}
                 <div className="relative w-full">
                     <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 lg:mx-0 lg:justify-start lg:gap-3">
-                        {/* PC 전용: 곰돋보기 마스코트 아이콘 */}
-                        <img src="/mascot/bear-lens.svg" alt="" width={44} height={44} className="h-9 w-9 shrink-0 rounded-lg lg:h-11 lg:w-11 lg:rounded-xl" />
-                        <div>
+                        {/* 곰돋보기 아이콘 + 제목: 누르면 홈 화면으로 이동해 새로고침(선택한 필터도 처음 상태로) */}
+                        <a
+                            href="/"
+                            aria-label="체험단 스캐너 홈 화면으로 가기"
+                            onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); window.location.reload(); }}
+                            className="flex items-center gap-2 lg:gap-3"
+                        >
+                            <img src="/mascot/bear-lens.svg" alt="" width={44} height={44} className="h-9 w-9 shrink-0 rounded-lg lg:h-11 lg:w-11 lg:rounded-xl" />
                             <h1 className="text-xl font-extrabold tracking-tight lg:text-2xl">
                                 체험단 스캐너
                             </h1>
-                            {/* 화면에는 보이지 않지만(스크린리더용) 소개 문구는 유지 */}
-                            <p className="sr-only">
-                                블로그 체험단 사이트 모음, 체험단 스캐너. 지역·보상별로 한눈에 찾아보세요.
-                            </p>
-                        </div>
+                        </a>
+                        {/* 화면에는 보이지 않지만(스크린리더용) 소개 문구는 유지 */}
+                        <p className="sr-only">
+                            블로그 체험단 사이트 모음, 체험단 스캐너. 지역·보상별로 한눈에 찾아보세요.
+                        </p>
                     </div>
 
                     {/* 맨 위에서의 필터 버튼 — 하얀 바 위의 파란 버튼 */}
@@ -67,15 +74,24 @@ export default function Hero() {
 
                     {/* 공유하기 — PC: 제목 줄 오른쪽 끝의 '공유' 버튼 / 모바일: 오른쪽 위 ⋮ 메뉴(공유하기·홈 화면에 설치) */}
                     <OverflowMenu variant="hero" onShare={share} />
-                    <button
-                        type="button"
-                        onClick={share}
-                        aria-label="사이트 공유하기"
-                        className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 rounded-lg text-sm font-bold transition-colors"
-                    >
-                        <Share2 size={16} />
-                        공유
-                    </button>
+                    <div className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 items-center gap-1">
+                        {/* 주소(href)는 그대로 두고(링크 공유·검색용), 보통 클릭은 팝업 창으로 연다 */}
+                        <a href="/guide" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openInfo('guide'); }} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-blue-700">
+                            이용가이드
+                        </a>
+                        <a href="/terms" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openInfo('terms'); }} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-blue-700">
+                            이용약관
+                        </a>
+                        <button
+                            type="button"
+                            onClick={share}
+                            aria-label="사이트 공유하기"
+                            className="ml-1 flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 rounded-lg text-sm font-bold transition-colors"
+                        >
+                            <Share2 size={16} />
+                            공유
+                        </button>
+                    </div>
                 </div>
             </div>
 
