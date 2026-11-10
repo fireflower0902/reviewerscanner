@@ -1,7 +1,7 @@
 """
 리뷰어스캐너 크롤러 오케스트레이터
 - 7개 사이트별 모듈이 각자 독립 브라우저로 동시 실행
-- 강남맛집·포블로그는 GitHub Actions(데이터센터 IP)에서 차단되어 한국 IP 기기가 수집(run_local_sources.py)하고, 여기서는 R2의 부분 파일을 합친다
+- 서울오빠(간헐 차단)·강남맛집·포블로그·미블은 Mac이 수집(run_*.py)한다. 강남맛집·포블로그는 GitHub Actions(데이터센터 IP)에서 차단되어 한국 IP 기기가 수집(run_local_sources.py)하고, 여기서는 R2의 부분 파일을 합친다
 - asyncio.Semaphore(CRAWLER_CONCURRENCY, 기본 9)로 동시 실행 수 제한 (GitHub Actions 메모리 보호)
 - 각 모듈 위치: crawler/crawlers/{사이트명}.py
 """
@@ -16,20 +16,19 @@ from typing import List, Dict
 from helpers import normalize_dday, shift_dday
 
 from crawlers import reviewplace, reviewnote, dinnerqueen
-from crawlers import seouloppa, cometoplay, revu, ohmyblog
+from crawlers import cometoplay, revu, ohmyblog
 
 # 크롤러 하나가 이 시간(초) 넘게 응답하지 않으면 그 사이트만 포기하고 나머지는 계속 진행한다
 CRAWLER_TIMEOUT = int(os.environ.get("CRAWLER_TIMEOUT", "900"))   # 사이트당 최대 15분 (정상은 5분 안팎, 레뷰·리뷰노트가 가장 오래 걸림)
 MIN_ITEMS_TO_UPLOAD = int(os.environ.get("MIN_ITEMS_TO_UPLOAD", "5000"))
 
 # 한국 IP 기기가 별도로 수집해서 R2에 올리는 사이트(부분 파일 이름)
-LOCAL_PARTS = ["kangnam", "fourblog", "mrblog"]
+LOCAL_PARTS = ["kangnam", "fourblog", "mrblog", "seouloppa"]
 
 _CRAWLERS = [
     ("리뷰플레이스", reviewplace.run),
     ("리뷰노트",    reviewnote.run),
     ("디너의여왕",  dinnerqueen.run),
-    ("서울오빠",    seouloppa.run),
     ("놀러와체험단", cometoplay.run),
     ("레뷰",       revu.run),
     ("오마이블로그", ohmyblog.run),
