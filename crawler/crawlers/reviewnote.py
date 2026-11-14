@@ -29,9 +29,9 @@ _FETCH_JS = """async (u) => {
 
 PAGE_SIZE = 16               # 서버가 limit 값을 무시하고 항상 16개씩 준다
 MAX_PAGES = 100              # 2026-11 이후 한 조건(지역/카테고리)당 100페이지(1,600건)까지만 내려준다
-PACE_MS = 250                # 요청 사이 간격 (너무 빠르면 403)
-REQUEST_BUDGET = int(os.environ.get("REVIEWNOTE_REQUEST_BUDGET", "400"))   # 한 회차에 보내는 요청 수 상한
-TIME_BUDGET_SEC = int(os.environ.get("REVIEWNOTE_TIME_BUDGET", "480"))
+PACE_MS = 600                # 요청 사이 간격 (너무 빠르면 403)
+REQUEST_BUDGET = int(os.environ.get("REVIEWNOTE_REQUEST_BUDGET", "900"))   # 한 회차에 보내는 요청 수 상한
+TIME_BUDGET_SEC = int(os.environ.get("REVIEWNOTE_TIME_BUDGET", "660"))
 STATE_NAME = "reviewnote"
 _CATEGORIES = ["맛집", "뷰티", "식품", "여행", "디지털", "반려동물", "기타"]
 
