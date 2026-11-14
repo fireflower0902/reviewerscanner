@@ -106,6 +106,26 @@ def load_part(name: str, max_age_hours: float = 36, now=None, client=None) -> Li
     return items
 
 
+def state_key(name: str) -> str:
+    return f"v1/state/{name}.json.gz"
+
+
+def save_state(name: str, obj: Dict, client=None) -> None:
+    """크롤러가 회차 사이에 이어서 쓰는 상태(수집한 항목, 진행 위치 등)를 R2에 저장한다. 사이트에는 노출되지 않는다."""
+    payload = gzip.compress(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), compresslevel=9)
+    (client or _client()).put_object(Bucket=os.environ["R2_BUCKET"], Key=state_key(name), Body=payload, ContentType="application/json")
+
+
+def load_state(name: str, client=None):
+    """save_state로 저장한 상태를 읽는다. 없거나 읽기 실패면 None."""
+    try:
+        obj = (client or _client()).get_object(Bucket=os.environ["R2_BUCKET"], Key=state_key(name))
+        return json.loads(gzip.decompress(obj["Body"].read()).decode("utf-8"))
+    except Exception as e:
+        print(f"[R2] state '{name}' 없음/읽기 실패: {type(e).__name__}")
+        return None
+
+
 def load_previous(client=None):
     """직전에 올린 전체 데이터 파일과 그 생성 시각(ISO)을 읽는다. 없거나 읽기 실패면 ([], None)."""
     try:
