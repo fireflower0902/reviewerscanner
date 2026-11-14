@@ -29,7 +29,7 @@ _FETCH_JS = """async (u) => {
 PAGE_SIZE = 16               # 서버가 limit 값을 무시하고 항상 16개씩 준다
 MAX_PAGES = 100              # 2026-11 이후 한 조건(지역/카테고리)당 100페이지(1,600건)까지만 내려준다
 PACE_MS = 150                # 요청 사이 간격
-CONCURRENCY = 1             # 동시에 여러 개 요청하면 403(봇 차단)이 난다 — 한 번에 하나씩
+CONCURRENCY = 2             # 너무 많이 동시에 요청하면 403(봇 차단)이 난다
 MAX_FAILED_UNITS = 3         # 재시도 후에도 실패한 조각이 이 개수를 넘으면 이번 수집은 버린다
 _CATEGORIES = ["맛집", "뷰티", "식품", "여행", "디지털", "반려동물", "기타"]
 
@@ -111,6 +111,12 @@ async def _fetch(page, url: str):
 async def _collect_unit(page, params: str):
     """한 조건(지역[+카테고리])의 모든 페이지를 받는다. 반환: (항목 목록, 상한 도달 여부, 성공 여부)"""
     objs = []
+    # 마지막 페이지(100번째)에 내용이 있으면 상한에 닿는 조건이다 → 앞 99페이지를 받느라 시간 쓰지 않고 바로 쪼갠다
+    probe = await _fetch(page, f"https://www.reviewnote.co.kr/api/v2/campaigns?{params}&s=default&limit={PAGE_SIZE}&page={MAX_PAGES - 1}")
+    if probe is None:
+        return objs, False, False
+    if probe.get('objects'):
+        return objs, True, True
     for idx in range(MAX_PAGES):
         data = await _fetch(page, f"https://www.reviewnote.co.kr/api/v2/campaigns?{params}&s=default&limit={PAGE_SIZE}&page={idx}")
         if data is None:
@@ -119,7 +125,7 @@ async def _collect_unit(page, params: str):
         objs.extend(items)
         if not items or not data.get('has_more'):
             return objs, False, True
-    return objs, True, True      # 100페이지를 다 채움 = 더 있을 수 있음
+    return objs, True, True      # 100페이지를 다 채움 = 더 있을 수 있음(드물게 probe 이후 늘어난 경우)
 
 
 async def crawl(context: BrowserContext) -> List[Dict]:
