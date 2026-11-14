@@ -1,3 +1,4 @@
+import asyncio
 import re
 import sys
 import os
@@ -25,11 +26,105 @@ _FETCH_JS = """async (u) => {
 }"""
 
 
-async def crawl(context: BrowserContext) -> List[Dict]:
-    """리뷰노트 크롤링 (API Pagination)"""
-    print("[ReviewNote] Accessing API...")
-    results = []
+PAGE_SIZE = 16               # 서버가 limit 값을 무시하고 항상 16개씩 준다
+MAX_PAGES = 100              # 2026-11 이후 한 조건(지역/카테고리)당 100페이지(1,600건)까지만 내려준다
+PACE_MS = 150                # 요청 사이 간격
+CONCURRENCY = 1             # 동시에 여러 개 요청하면 403(봇 차단)이 난다 — 한 번에 하나씩
+MAX_FAILED_UNITS = 3         # 재시도 후에도 실패한 조각이 이 개수를 넘으면 이번 수집은 버린다
+_CATEGORIES = ["맛집", "뷰티", "식품", "여행", "디지털", "반려동물", "기타"]
 
+
+def parse_item(item: Dict):
+    """API 항목 하나 → 표준 캠페인 dict. 제외 대상(재택·배송)이면 None"""
+    title = item.get('title', '').strip()
+    campaign_id = item.get('id')
+    link = f"https://www.reviewnote.co.kr/campaigns/{campaign_id}"
+
+    sido_name = item.get('sido', {}).get('name', '')
+    city_name = item.get('city', '')
+    if sido_name in ['재택', '배송'] or city_name in ['재택', '배송']:
+        return None
+
+    raw_region = f"{sido_name} {city_name}".strip()
+    region_data = RegionMapper.normalize(raw_region)
+
+    offer = item.get('offer', '').strip()
+    reward_value = normalize_reward(offer)
+
+    channel = item.get('channel', '')
+    type_ = map_channel(channel, title)
+
+    raw_cat = item.get('category', {}).get('title', '')
+    if raw_cat in REVIEWNOTE_CATEGORY_MAP:
+        category = REVIEWNOTE_CATEGORY_MAP[raw_cat]
+    else:
+        category = extract_category_by_keyword(title, offer)
+
+    dday = ""
+    end_at = item.get('applyEndAt')
+    if end_at:
+        try:
+            dt_str = end_at.split('.')[0]
+            target = datetime.datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
+            diff = target - datetime.datetime.now()
+            dday = f"{diff.days}일 남음" if diff.days >= 0 else "마감"
+        except Exception:
+            pass
+
+    img_key = item.get('imageKey')
+    img_url = ""
+    if img_key:
+        img_url = f"{_BASE_IMG_URL}{urllib.parse.quote(img_key, safe='')}?alt=media"
+
+    applicants = int(item.get('applicantCount', 0))
+    try:
+        quota = int(item.get('infNum', 0))
+    except Exception:
+        quota = 0
+
+    return {
+        "platform": "리뷰노트", "title": title, "url": link,
+        "region": region_data, "category": category,
+        "reward": {"text": offer, "value": reward_value},
+        "meta": {"type": type_, "dday": dday},
+        "image_url": img_url,
+        "stats": {"applicants": applicants, "quota": quota},
+    }
+
+
+async def _fetch(page, url: str):
+    """페이지 컨텍스트 안에서 fetch(직접 요청은 403). 일시 오류·403·429는 쉬었다가 6번까지 재시도. 끝내 실패하면 None"""
+    for attempt in range(6):
+        try:
+            status, data = await page.evaluate(_FETCH_JS, url)
+            if status == 200 and data is not None:
+                await page.wait_for_timeout(PACE_MS)
+                return data
+            print(f"[ReviewNote] HTTP {status} ({url[-80:]}) 시도 {attempt + 1}/6")
+            await page.wait_for_timeout(min(10000 * (attempt + 1), 45000) if status in (403, 429) else 1500)
+        except Exception as e:
+            print(f"[ReviewNote] fetch 실패 (시도 {attempt + 1}/6): {str(e).splitlines()[0][:120]}")
+            await page.wait_for_timeout(1500)
+    return None
+
+
+async def _collect_unit(page, params: str):
+    """한 조건(지역[+카테고리])의 모든 페이지를 받는다. 반환: (항목 목록, 상한 도달 여부, 성공 여부)"""
+    objs = []
+    for idx in range(MAX_PAGES):
+        data = await _fetch(page, f"https://www.reviewnote.co.kr/api/v2/campaigns?{params}&s=default&limit={PAGE_SIZE}&page={idx}")
+        if data is None:
+            return objs, False, False
+        items = data.get('objects', [])
+        objs.extend(items)
+        if not items or not data.get('has_more'):
+            return objs, False, True
+    return objs, True, True      # 100페이지를 다 채움 = 더 있을 수 있음
+
+
+async def crawl(context: BrowserContext) -> List[Dict]:
+    """리뷰노트 크롤링: 구·군 단위로 나눠 받는다(조건당 1,600건 상한 우회)"""
+    print("[ReviewNote] Accessing API...")
     page = await context.new_page()
     try:
         await page.goto("https://www.reviewnote.co.kr/campaigns", wait_until="domcontentloaded", timeout=60000)
@@ -37,117 +132,77 @@ async def crawl(context: BrowserContext) -> List[Dict]:
     except Exception as e:
         print(f"[ReviewNote] Init Page Error: {e}")
 
-    page_idx = 0
-    limit = 20
-    max_pages = 2000  # 안전 상한. 정상 종료는 API의 has_more=False
-    seen_ids = set()
+    sidos = await _fetch(page, "https://www.reviewnote.co.kr/api/v2/sidos")
+    if not sidos:
+        raise RuntimeError("리뷰노트 지역 목록(/api/v2/sidos)을 받지 못했습니다")
 
-    while page_idx < max_pages:
-        api_url = f"https://www.reviewnote.co.kr/api/v2/campaigns?s=popular&limit={limit}&page={page_idx}"
-        try:
-            # 직접 요청은 403(봇 차단)이라 페이지 컨텍스트 안에서 fetch (Referer/Sec-Fetch 헤더 자동 포함)
-            # fetch에 30초 제한을 둔다(없으면 응답 하나가 멈출 때 크롤러 전체가 영원히 대기), 일시 오류는 2번 더 재시도
-            fetched = None
-            for attempt in range(3):
-                try:
-                    fetched = await page.evaluate(_FETCH_JS, api_url)
-                    break
-                except Exception as fetch_err:
-                    print(f"[ReviewNote] fetch 실패 page {page_idx} (시도 {attempt + 1}/3): {str(fetch_err).splitlines()[0][:120]}")
-                    await page.wait_for_timeout(1500)
-            if fetched is None:
-                print(f"[ReviewNote] page {page_idx}에서 3번 연속 실패 — 지금까지 수집한 {len(results)}건으로 마무리합니다")
-                break
-            status, data = fetched
-            if status != 200 or data is None:
-                print(f"[ReviewNote] API Error {status} at page {page_idx}")
-                break
+    # 시·도 단위로 한 번에 받고, 1,600건 상한에 닿은 곳(서울·경기 등)만 구·군 → 카테고리 순으로 더 쪼갠다
+    # 재택·배송은 어차피 제외하므로 요청하지 않는다
+    units = [(sido["name"], sido, f"city={urllib.parse.quote(sido['name'])}")
+             for sido in sidos if sido["name"] not in ("재택", "배송")]
+    print(f"[ReviewNote] 시·도 {len(units)}곳")
 
-            items = data.get('objects', [])
-            if not items:
-                print("[ReviewNote] No more items.")
-                break
+    sem = asyncio.Semaphore(CONCURRENCY)
+    all_objs: List[Dict] = []
+    failed: List[str] = []
 
-            print(f"[ReviewNote] Page {page_idx}: Found {len(items)} items")
+    async def get_unit(label: str, params: str):
+        async with sem:
+            return await _collect_unit(page, params)
 
-            for item in items:
-                try:
-                    title = item.get('title', '').strip()
-                    campaign_id = item.get('id')
-                    if campaign_id in seen_ids:
-                        continue
-                    seen_ids.add(campaign_id)
-                    link = f"https://www.reviewnote.co.kr/campaigns/{campaign_id}"
+    async def by_category(label: str, params: str):
+        out = []
+        for cat in _CATEGORIES:
+            sub, capped, ok = await get_unit(label, f"{params}&category={urllib.parse.quote(cat)}")
+            if not ok:
+                failed.append(f"{label}/{cat}")
+            if capped:
+                print(f"[ReviewNote] ⚠ {label}/{cat}도 상한({MAX_PAGES * PAGE_SIZE}건)에 닿았습니다 — 일부 누락 가능")
+            out.extend(sub)
+        return out
 
-                    sido_name = item.get('sido', {}).get('name', '')
-                    city_name = item.get('city', '')
-                    if sido_name in ['재택', '배송'] or city_name in ['재택', '배송']:
-                        continue
-
-                    raw_region = f"{sido_name} {city_name}".strip()
-                    region_data = RegionMapper.normalize(raw_region)
-
-                    offer = item.get('offer', '').strip()
-                    reward_value = normalize_reward(offer)
-
-                    channel = item.get('channel', '')
-                    type_ = map_channel(channel, title)
-
-                    raw_cat = item.get('category', {}).get('title', '')
-                    if raw_cat in REVIEWNOTE_CATEGORY_MAP:
-                        category = REVIEWNOTE_CATEGORY_MAP[raw_cat]
-                    else:
-                        category = extract_category_by_keyword(title, offer)
-
-                    dday = ""
-                    end_at = item.get('applyEndAt')
-                    if end_at:
-                        try:
-                            dt_str = end_at.split('.')[0]
-                            target = datetime.datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S")
-                            now = datetime.datetime.now()
-                            diff = target - now
-                            if diff.days >= 0:
-                                dday = f"{diff.days}일 남음"
-                            else:
-                                dday = "마감"
-                        except: pass
-
-                    img_key = item.get('imageKey')
-                    img_url = ""
-                    if img_key:
-                        encoded_key = urllib.parse.quote(img_key, safe='')
-                        img_url = f"{_BASE_IMG_URL}{encoded_key}?alt=media"
-
-                    applicants = int(item.get('applicantCount', 0))
-                    try:
-                        quota = int(item.get('infNum', 0))
-                    except:
-                        quota = 0
-
-                    results.append({
-                        "platform": "리뷰노트", "title": title, "url": link,
-                        "region": region_data, "category": category,
-                        "reward": {"text": offer, "value": reward_value},
-                        "meta": {"type": type_, "dday": dday},
-                        "image_url": img_url,
-                        "stats": {"applicants": applicants, "quota": quota}
-                    })
-                except Exception:
+    async def worker(label: str, sido: Dict, params: str):
+        objs, capped, ok = await get_unit(label, params)
+        if not ok:
+            failed.append(label)
+            return
+        if capped:
+            print(f"[ReviewNote] {label}: 상한 도달 → 구·군별로 다시 수집")
+            objs = []
+            for g in sido.get("guguns", []):
+                gl, gp = f"{label} {g['name']}", f"{params}&gugunSelected={g['id']}"
+                sub, g_capped, g_ok = await get_unit(gl, gp)
+                if not g_ok:
+                    failed.append(gl)
                     continue
+                if g_capped:
+                    print(f"[ReviewNote] {gl}: 상한 도달 → 카테고리별로 다시 수집")
+                    sub = await by_category(gl, gp)
+                objs.extend(sub)
+        all_objs.extend(objs)
 
-            if page_idx % 100 == 0:
-                print(f"  [ReviewNote] Page {page_idx}: {len(results)} items so far")
-            if not data.get('has_more'):
-                break
-            page_idx += 1
-
-        except Exception as e:
-            print(f"[ReviewNote] Page Loop Error: {e}")
-            break
-
+    await asyncio.gather(*(worker(l, sd, q) for l, sd, q in units))
     await page.close()
-    print(f"[ReviewNote] Collected {len(results)} items")
+
+    if len(failed) > MAX_FAILED_UNITS:
+        raise RuntimeError(f"리뷰노트 {len(failed)}개 조각 수집 실패 {failed[:5]} — 이번 결과는 사용하지 않습니다")
+    if failed:
+        print(f"[ReviewNote] ⚠ 일부 조각 실패(이번 회차 누락): {failed}")
+
+    results, seen_ids = [], set()
+    for item in all_objs:
+        cid = item.get('id')
+        if cid in seen_ids:
+            continue
+        seen_ids.add(cid)
+        try:
+            parsed = parse_item(item)
+        except Exception:
+            continue
+        if parsed:
+            results.append(parsed)
+
+    print(f"[ReviewNote] Collected {len(results)} items (시·도 {len(units)}곳, 원본 {len(all_objs)}건, 중복 제거 후 {len(seen_ids)}건)")
     return results
 
 
