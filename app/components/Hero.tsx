@@ -82,6 +82,9 @@ export default function Hero() {
                         <a href="/terms" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openInfo('terms'); }} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-blue-700">
                             이용약관
                         </a>
+                        <a href="/privacy" className="rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-blue-700">
+                            개인정보처리방침
+                        </a>
                         <button
                             type="button"
                             onClick={share}

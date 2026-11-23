@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Share2, Download, BookOpen, FileText } from 'lucide-react';
+import { MoreVertical, Share2, Download, BookOpen, FileText, Shield } from 'lucide-react';
 import { useInstallGuide } from './InstallGuide';
 import { useInfoModal } from './InfoModal';
 
@@ -98,6 +98,14 @@ export default function OverflowMenu({
                         <FileText size={16} className="text-blue-600" />
                         이용약관
                     </button>
+                    <a
+                        href="/privacy"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium hover:bg-gray-50 active:bg-gray-100"
+                    >
+                        <Shield size={16} className="text-blue-600" />
+                        개인정보처리방침
+                    </a>
                 </div>
             )}
         </div>

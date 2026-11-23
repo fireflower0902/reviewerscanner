@@ -8,7 +8,7 @@ export default function InfoPage({
     updated,
     children,
 }: {
-    current: 'guide' | 'terms';
+    current: 'guide' | 'terms' | 'privacy';
     title: string;
     updated?: string;
     children: React.ReactNode;
@@ -46,9 +46,10 @@ export default function InfoPage({
             <footer className="border-t border-gray-200 bg-gray-50">
                 <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-sm text-gray-500">
                     <span>© 체험단 스캐너</span>
-                    <span className="flex gap-4">
+                    <span className="flex flex-wrap gap-x-4 gap-y-2">
                         <Link href="/guide" className="hover:text-blue-700">이용가이드</Link>
                         <Link href="/terms" className="hover:text-blue-700">이용약관</Link>
+                        <Link href="/privacy" aria-current={current === 'privacy' ? 'page' : undefined} className="hover:text-blue-700">개인정보처리방침</Link>
                         <Link href="/" className="hover:text-blue-700">홈</Link>
                     </span>
                 </div>
