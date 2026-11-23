@@ -19,7 +19,7 @@ export default function Home() {
         <CampaignList />
       </div>
 
-      {/* 하단 고정 광고 띠 (종류는 app/lib/adConfig.ts) */}
+      {/* 하단 광고 (종류는 app/lib/adConfig.ts) */}
       <AdBar />
     </main>
     </InfoModalProvider>

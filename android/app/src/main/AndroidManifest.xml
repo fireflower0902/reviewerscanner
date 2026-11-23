@@ -11,7 +11,7 @@
             android:exported="true">
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://scan.reviewerscanner.com/?source=android-app" />
+                android:value="https://scan.reviewerscanner.com/?source=android-app-ads" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
