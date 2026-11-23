@@ -28,6 +28,14 @@ export default function AdBar() {
     // 화면 너비에 맞는 배너 너비 계산 (설정값 680을 넘지 않게, 좌우 여백 16px). 화면 크기가 크게 바뀌면(회전 등) 다시 계산한다
     useEffect(() => {
         if (provider !== 'coupang') return;
+        let androidApp = new URLSearchParams(window.location.search).get('source') === 'android-app';
+        try {
+            if (androidApp) window.sessionStorage.setItem('reviewerscanner-android-app', '1');
+            androidApp ||= window.sessionStorage.getItem('reviewerscanner-android-app') === '1';
+        } catch {
+            // The launch URL still identifies the app when browser storage is disabled.
+        }
+        if (androidApp) return;
         const max = Number(coupang.width);
         const calc = () => Math.max(260, Math.min(max, window.innerWidth - 16));
         setBannerWidth(calc());
@@ -97,7 +105,7 @@ export default function AdBar() {
     }, [provider, failed]);
 
     // 'adsense'는 아직 연결 코드가 없어 표시하지 않는다(승인 후 이 자리에 <ins class="adsbygoogle"> 추가)
-    if (provider !== 'coupang' || failed) return null;
+    if (provider !== 'coupang' || failed || bannerWidth === 0) return null;
 
     return (
         <>

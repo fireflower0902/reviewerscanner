@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">체험단 스캐너</string>
+    <string name="asset_statements">[{\"relation\":[\"delegate_permission/common.handle_all_urls\"],\"target\":{\"namespace\":\"web\",\"site\":\"https://scan.reviewerscanner.com\"}}]</string>
+</resources>

@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application' version '8.13.2'
+}
+
+android {
+    namespace 'com.reviewerscanner.scan'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.reviewerscanner.scan'
+        minSdk 23
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        release {
+            def uploadKeystore = System.getenv('REVIEWERSCANNER_UPLOAD_KEYSTORE')
+            if (uploadKeystore) {
+                storeFile file(uploadKeystore)
+                storePassword System.getenv('REVIEWERSCANNER_UPLOAD_PASSWORD')
+                keyAlias 'reviewerscanner-upload'
+                keyPassword storePassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+}
