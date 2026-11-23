@@ -21,7 +21,6 @@ export default function AdBar() {
     const { provider, coupang, disclosure } = AD_CONFIG;
     const slotRef = useRef<HTMLDivElement>(null);
     const barRef = useRef<HTMLDivElement>(null);
-    const [inline, setInline] = useState(false);
     const [failed, setFailed] = useState(false);
     const [barHeight, setBarHeight] = useState(0);
     const [bannerWidth, setBannerWidth] = useState(0);   // 0 = 아직 화면 너비를 모름(광고 로드 전)
@@ -30,7 +29,7 @@ export default function AdBar() {
     useEffect(() => {
         if (provider !== 'coupang') return;
         const source = new URLSearchParams(window.location.search).get('source');
-        let androidMode = source === 'android-app-ads' ? 'inline' : source === 'android-app' ? 'off' : null;
+        let androidMode = source === 'android-app-ads' ? 'on' : source === 'android-app' ? 'off' : null;
         try {
             if (androidMode) window.sessionStorage.setItem('reviewerscanner-android-app', androidMode);
             androidMode ??= window.sessionStorage.getItem('reviewerscanner-android-app');
@@ -38,7 +37,6 @@ export default function AdBar() {
             // The launch URL still identifies the app when browser storage is disabled.
         }
         if (androidMode === 'off' || androidMode === '1') return;
-        setInline(androidMode === 'inline');
         const max = Number(coupang.width);
         const calc = () => Math.max(260, Math.min(max, window.innerWidth - 16));
         setBannerWidth(calc());
@@ -94,7 +92,7 @@ export default function AdBar() {
     // 띠 높이를 재서 (1) 마지막 카드가 가려지지 않게 아래 여백을 확보하고 (2) 사이드바 높이를 맞춘다
     useEffect(() => {
         const bar = barRef.current;
-        if (!bar || inline || !hasBanner) return;
+        if (!bar || !hasBanner) return;
         const update = () => {
             const h = bar.offsetHeight;
             setBarHeight(h);
@@ -107,7 +105,7 @@ export default function AdBar() {
             ro.disconnect();
             document.documentElement.style.removeProperty('--ad-bar-h');
         };
-    }, [inline, hasBanner]);
+    }, [hasBanner]);
 
     // 'adsense'는 아직 연결 코드가 없어 표시하지 않는다(승인 후 이 자리에 <ins class="adsbygoogle"> 추가)
     if (provider !== 'coupang' || !hasBanner) return null;
@@ -115,12 +113,10 @@ export default function AdBar() {
     return (
         <>
             {/* 고정된 띠가 마지막 카드를 가리지 않도록 같은 높이의 빈 공간 */}
-            {!inline && <div aria-hidden="true" style={{ height: barHeight }} />}
+            <div aria-hidden="true" style={{ height: barHeight }} />
             <div
                 ref={barRef}
-                className={inline
-                    ? 'bg-white border-t border-gray-200'
-                    : 'fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]'}
+                className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
                 <div className="mx-auto flex flex-col items-center px-2 md:px-4 pt-1.5 pb-1">
